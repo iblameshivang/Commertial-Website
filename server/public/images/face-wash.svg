@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160">
+  <rect width="100%" height="100%" fill="#fff8f1"/>
+  <rect x="60" y="30" width="120" height="80" rx="10" fill="#ffe6d5" stroke="#ffcfb3"/>
+  <circle cx="120" cy="70" r="18" fill="#ffd7b5"/>
+  <text x="50%" y="88%" font-size="12" text-anchor="middle" fill="#7c2d12">Face Wash</text>
+</svg>

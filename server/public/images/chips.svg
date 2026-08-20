@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160">
+  <rect width="100%" height="100%" fill="#fffef6"/>
+  <ellipse cx="120" cy="80" rx="60" ry="36" fill="#fff0b3" stroke="#ffd966"/>
+  <text x="50%" y="88%" font-size="12" text-anchor="middle" fill="#7a4b00">Chips</text>
+</svg>
