@@ -3,6 +3,7 @@ import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import ProductCard from './ProductCard';
 import ProductDetailPage from './ProductDetailPage';
 import { API_BASE, resolveImageUrl } from './config';
+import VisualDashboard from './AdminDashboard';
 
 const CART_KEY = 'ecommerce-demo-cart';
 const EMPTY_CATEGORY_FORM = { name: '' };
@@ -243,7 +244,7 @@ function AdminDashboard() {
     await fetchData();
   };
 
-  const openProductForm = (product = null) => {
+const openProductForm = (product = null) => {
     setProductError('');
     setProductSuccess('');
     setProductDeleteId(null);
@@ -252,10 +253,10 @@ function AdminDashboard() {
       setEditingProductId(product.id);
       const additionalImages = Array.isArray(product.images) ? product.images.slice(1).join(', ') : '';
       setProductForm({
-        name: product.name,
-        price: String(product.price),
-        stock: String(product.stock),
-        category_id: String(product.category_id),
+        name: product.name || '',
+        price: String(product.price ?? ''),
+        stock: String(product.stock ?? ''),
+        category_id: String(product.category_id ?? (categories[0]?.id || '')),
         image_url: product.image_url || '',
         description: product.description || '',
         additional_images: additionalImages,
@@ -364,16 +365,12 @@ function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      <div className="summary-grid">
-        <div className="summary-card">
-          <span>Total Categories</span>
-          <strong>{categories.length}</strong>
-        </div>
-        <div className="summary-card">
-          <span>Total Products</span>
-          <strong>{products.length}</strong>
-        </div>
-      </div>
+      {loading && <p className="info">Loading dashboard metrics...</p>}
+      {error && <p className="error">Error: {error}</p>}
+
+      {!loading && !error && (
+        <VisualDashboard products={products} categories={categories} />
+      )}
 
       <section className="admin-section">
         <h2>Category Management</h2>
