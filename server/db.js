@@ -1,26 +1,34 @@
 const path = require('path');
 const fs = require('fs');
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 
-// Ensure data folder exists (should already be created)
 const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
 
-const dbPath = path.join(dataDir, 'demo.db');
-const db = new Database(dbPath);
+const db = new DatabaseSync(path.join(dataDir, 'demo.db'));
+db.exec('PRAGMA foreign_keys = ON');
 
-// Enable foreign keys
-db.pragma('foreign_keys = ON');
+const tableColumns = tableName => db.prepare(`PRAGMA table_info(${tableName})`).all();
 
-// Create tables if they don't exist
-db.prepare(`
+const addColumnIfMissing = (tableName, columnName, definition) => {
+  const columns = tableColumns(tableName);
+  const exists = columns.some(column => column.name === columnName);
+
+  if (!exists) {
+    db.prepare(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`).run();
+  }
+};
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
   )
-`).run();
+`);
 
-db.prepare(`
+db.exec(`
   CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -28,27 +36,120 @@ db.prepare(`
     stock INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
     image_url TEXT,
+    description TEXT,
     FOREIGN KEY(category_id) REFERENCES categories(id)
   )
-`).run();
+`);
 
-// Seed data only when categories table is empty
+addColumnIfMissing('products', 'description', 'TEXT');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS product_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL,
+    image_url TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_primary INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+  )
+`);
+
+const ensureProductImages = () => {
+  const missingImageRows = db.prepare(`
+    SELECT p.id, p.image_url
+    FROM products p
+    LEFT JOIN product_images pi ON pi.product_id = p.id
+    WHERE pi.id IS NULL AND p.image_url IS NOT NULL AND TRIM(p.image_url) != ''
+  `).all();
+
+  if (missingImageRows.length === 0) {
+    return;
+  }
+
+  const insertImage = db.prepare(`
+    INSERT INTO product_images (product_id, image_url, sort_order, is_primary)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  missingImageRows.forEach((row, index) => {
+    insertImage.run(row.id, row.image_url, index, index === 0 ? 1 : 0);
+  });
+};
+
 const count = db.prepare('SELECT COUNT(*) as c FROM categories').get().c;
 if (count === 0) {
   const insertCategory = db.prepare('INSERT INTO categories (name) VALUES (?)');
-  const insertProduct = db.prepare('INSERT INTO products (name, price, stock, category_id, image_url) VALUES (?, ?, ?, ?, ?)');
+  const insertProduct = db.prepare(`
+    INSERT INTO products (name, price, stock, category_id, image_url, description)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  const insertProductImage = db.prepare(`
+    INSERT INTO product_images (product_id, image_url, sort_order, is_primary)
+    VALUES (?, ?, ?, ?)
+  `);
 
   const skincareId = insertCategory.run('Skincare').lastInsertRowid;
   const snacksId = insertCategory.run('Snacks').lastInsertRowid;
   const clothesId = insertCategory.run('Clothes').lastInsertRowid;
   const electronicsId = insertCategory.run('Electronics').lastInsertRowid;
 
-  // Use simple local svg placeholders served from /images
-  insertProduct.run('Deodorant', 249, 15, skincareId, '/images/deodorant.svg');
-  insertProduct.run('Face Wash', 199, 20, skincareId, '/images/face-wash.svg');
-  insertProduct.run('Chips', 40, 50, snacksId, '/images/chips.svg');
-  insertProduct.run('T-Shirt', 599, 10, clothesId, '/images/tshirt.svg');
-  insertProduct.run('Wireless Mouse', 799, 8, electronicsId, '/images/wireless-mouse.svg');
+  const products = [
+    {
+      name: 'Deodorant',
+      price: 249,
+      stock: 15,
+      category_id: skincareId,
+      image_url: '/images/deodorant.svg',
+      description: 'Long-lasting deodorant with a fresh scent and skin-friendly formula.'
+    },
+    {
+      name: 'Face Wash',
+      price: 199,
+      stock: 20,
+      category_id: skincareId,
+      image_url: '/images/face-wash.svg',
+      description: 'Gentle cleansing face wash that removes dirt without drying skin.'
+    },
+    {
+      name: 'Chips',
+      price: 40,
+      stock: 50,
+      category_id: snacksId,
+      image_url: '/images/chips.svg',
+      description: 'Crunchy, lightly salted chips with a satisfying snack-time bite.'
+    },
+    {
+      name: 'T-Shirt',
+      price: 599,
+      stock: 10,
+      category_id: clothesId,
+      image_url: '/images/tshirt.svg',
+      description: 'Comfort-fit cotton tee designed for everyday wear and easy layering.'
+    },
+    {
+      name: 'Wireless Mouse',
+      price: 799,
+      stock: 8,
+      category_id: electronicsId,
+      image_url: '/images/wireless-mouse.svg',
+      description: 'Ergonomic wireless mouse with smooth tracking and a rechargeable battery.'
+    }
+  ];
+
+  products.forEach(product => {
+    const result = insertProduct.run(
+      product.name,
+      product.price,
+      product.stock,
+      product.category_id,
+      product.image_url,
+      product.description
+    );
+
+    insertProductImage.run(result.lastInsertRowid, product.image_url, 0, 1);
+  });
 }
+
+ensureProductImages();
 
 module.exports = db;

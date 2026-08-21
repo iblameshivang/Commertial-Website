@@ -4,14 +4,103 @@ const cors = require('cors');
 const db = require('./db');
 
 const app = express();
-const PORT = 5000;
-const CLIENT_ORIGIN = 'http://localhost:5173';
-const DEFAULT_PRODUCT_IMAGE = '/images/deodorant.svg';
+const PORT = Number(process.env.PORT) || 5001;
+const DEFAULT_PRODUCT_IMAGE = '/images/no-image.svg';
+const DEFAULT_CLIENT_ORIGIN = 'http://localhost:5173';
+const allowedOrigins = (process.env.CLIENT_ORIGIN || DEFAULT_CLIENT_ORIGIN)
+  .split(',')
+  .map(value => value.trim())
+  .filter(Boolean);
 
-app.use(cors({ origin: CLIENT_ORIGIN }));
-app.use(express.json());
+const sanitizeString = value => (typeof value === 'string' ? value.trim() : '');
+const normalizeImageUrl = value => {
+  const trimmed = sanitizeString(value);
+  if (!trimmed) {
+    return DEFAULT_PRODUCT_IMAGE;
+  }
 
-// Serve static images
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  return `/${trimmed.replace(/^\.?\//, '')}`;
+};
+
+const getProductImages = (productId, fallbackImage) => {
+  const rows = db.prepare(`
+    SELECT image_url FROM product_images
+    WHERE product_id = ?
+    ORDER BY sort_order ASC, id ASC
+  `).all(productId);
+
+  const images = rows.map(row => normalizeImageUrl(row.image_url)).filter(Boolean);
+  if (images.length > 0) {
+    return images;
+  }
+
+  return [normalizeImageUrl(fallbackImage || DEFAULT_PRODUCT_IMAGE)];
+};
+
+const serializeProduct = product => {
+  const imageUrl = normalizeImageUrl(product.image_url || DEFAULT_PRODUCT_IMAGE);
+  const category = db.prepare('SELECT name FROM categories WHERE id = ?').get(product.category_id);
+  const productImages = getProductImages(product.id, imageUrl);
+
+  return {
+    ...product,
+    description: product.description || '',
+    image_url: productImages[0],
+    images: productImages,
+    category_name: category ? category.name : product.category_name || '',
+    price: Number(product.price || 0),
+    stock: Number(product.stock || 0),
+  };
+};
+
+const saveProductImages = (productId, incomingImageUrls, fallbackImage) => {
+  const normalizedUrls = Array.from(
+    new Set(
+      (Array.isArray(incomingImageUrls) ? incomingImageUrls : [])
+        .map(value => normalizeImageUrl(value))
+        .filter(Boolean)
+    )
+  );
+
+  const primaryImage = normalizedUrls[0] || normalizeImageUrl(fallbackImage || DEFAULT_PRODUCT_IMAGE);
+
+  db.prepare('DELETE FROM product_images WHERE product_id = ?').run(productId);
+
+  if (normalizedUrls.length === 0) {
+    db.prepare('INSERT INTO product_images (product_id, image_url, sort_order, is_primary) VALUES (?, ?, ?, ?)')
+      .run(productId, primaryImage, 0, 1);
+    db.prepare('UPDATE products SET image_url = ? WHERE id = ?').run(primaryImage, productId);
+    return;
+  }
+
+  normalizedUrls.forEach((imageUrl, index) => {
+    db.prepare('INSERT INTO product_images (product_id, image_url, sort_order, is_primary) VALUES (?, ?, ?, ?)')
+      .run(productId, imageUrl, index, index === 0 ? 1 : 0);
+  });
+
+  db.prepare('UPDATE products SET image_url = ? WHERE id = ?').run(primaryImage, productId);
+};
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Origin not permitted by CORS'));
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: '2mb' }));
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 app.get('/api/health', (req, res) => {
@@ -30,7 +119,7 @@ app.get('/api/categories', (req, res) => {
 
 app.post('/api/categories', (req, res) => {
   try {
-    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    const name = sanitizeString(req.body?.name);
 
     if (!name) {
       return res.status(400).json({ error: 'Category name is required.' });
@@ -54,7 +143,7 @@ app.post('/api/categories', (req, res) => {
 app.put('/api/categories/:id', (req, res) => {
   try {
     const categoryId = Number(req.params.id);
-    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    const name = sanitizeString(req.body?.name);
 
     if (!Number.isInteger(categoryId) || categoryId <= 0) {
       return res.status(404).json({ error: 'Category not found.' });
@@ -114,14 +203,24 @@ app.delete('/api/categories/:id', (req, res) => {
 
 app.get('/api/products', (req, res) => {
   try {
-    // Join to obtain category name
-    const rows = db.prepare(`
-      SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name as category_name, p.image_url
+    const categoryIdValue = sanitizeString(req.query.category_id);
+    const categoryId = categoryIdValue ? Number(categoryIdValue) : null;
+
+    let query = `
+      SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name AS category_name, p.image_url, p.description
       FROM products p
       JOIN categories c ON p.category_id = c.id
-      ORDER BY p.id
-    `).all();
+    `;
+    const params = [];
 
+    if (Number.isInteger(categoryId) && categoryId > 0) {
+      query += ' WHERE p.category_id = ?';
+      params.push(categoryId);
+    }
+
+    query += ' ORDER BY p.id';
+
+    const rows = db.prepare(query).all(...params).map(serializeProduct);
     res.json(rows);
   } catch (err) {
     console.error('Error fetching products', err);
@@ -129,13 +228,59 @@ app.get('/api/products', (req, res) => {
   }
 });
 
+app.get('/api/products/:id', (req, res) => {
+  try {
+    const productId = Number(req.params.id);
+
+    if (!Number.isInteger(productId) || productId <= 0) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    const product = db.prepare(`
+      SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name AS category_name, p.image_url, p.description
+      FROM products p
+      JOIN categories c ON p.category_id = c.id
+      WHERE p.id = ?
+    `).get(productId);
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    return res.json(serializeProduct(product));
+  } catch (err) {
+    console.error('Error fetching product', err);
+    return res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+app.get('/api/categories/:id/products', (req, res) => {
+  try {
+    const categoryId = Number(req.params.id);
+    if (!Number.isInteger(categoryId) || categoryId <= 0) {
+      return res.status(404).json({ error: 'Category not found.' });
+    }
+
+    return res.redirect(307, `/api/products?category_id=${categoryId}`);
+  } catch (err) {
+    console.error('Error fetching category products', err);
+    return res.status(500).json({ error: 'Failed to fetch products for category' });
+  }
+});
+
 app.post('/api/products', (req, res) => {
   try {
-    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    const name = sanitizeString(req.body?.name);
     const price = Number(req.body?.price);
     const stock = Number(req.body?.stock);
     const categoryId = Number(req.body?.category_id);
-    const imageUrl = typeof req.body?.image_url === 'string' ? req.body.image_url.trim() : '';
+    const imageUrl = sanitizeString(req.body?.image_url);
+    const description = sanitizeString(req.body?.description);
+    const incomingImages = Array.isArray(req.body?.images)
+      ? req.body.images
+      : typeof req.body?.images === 'string'
+        ? req.body.images.split(',')
+        : [];
 
     if (!name) {
       return res.status(400).json({ error: 'Product name is required.' });
@@ -158,19 +303,25 @@ app.post('/api/products', (req, res) => {
       return res.status(404).json({ error: 'Category not found.' });
     }
 
-    const image = imageUrl || DEFAULT_PRODUCT_IMAGE;
-    const result = db.prepare(
-      'INSERT INTO products (name, price, stock, category_id, image_url) VALUES (?, ?, ?, ?, ?)'
-    ).run(name, price, stock, categoryId, image);
+    const primaryImage = imageUrl || incomingImages.find(item => typeof item === 'string' && item.trim()) || DEFAULT_PRODUCT_IMAGE;
+    const finalImage = normalizeImageUrl(primaryImage);
+
+    const result = db.prepare(`
+      INSERT INTO products (name, price, stock, category_id, image_url, description)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(name, price, stock, categoryId, finalImage, description);
+
+    const productId = Number(result.lastInsertRowid);
+    saveProductImages(productId, incomingImages.length ? incomingImages : [finalImage], finalImage);
 
     const product = db.prepare(`
-      SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name AS category_name, p.image_url
+      SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name AS category_name, p.image_url, p.description
       FROM products p
       JOIN categories c ON p.category_id = c.id
       WHERE p.id = ?
-    `).get(result.lastInsertRowid);
+    `).get(productId);
 
-    return res.status(201).json(product);
+    return res.status(201).json(serializeProduct(product));
   } catch (err) {
     console.error('Error creating product', err);
     return res.status(500).json({ error: 'Failed to create product' });
@@ -180,11 +331,17 @@ app.post('/api/products', (req, res) => {
 app.put('/api/products/:id', (req, res) => {
   try {
     const productId = Number(req.params.id);
-    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    const name = sanitizeString(req.body?.name);
     const price = Number(req.body?.price);
     const stock = Number(req.body?.stock);
     const categoryId = Number(req.body?.category_id);
-    const imageUrl = typeof req.body?.image_url === 'string' ? req.body.image_url.trim() : '';
+    const imageUrl = sanitizeString(req.body?.image_url);
+    const description = sanitizeString(req.body?.description);
+    const incomingImages = Array.isArray(req.body?.images)
+      ? req.body.images
+      : typeof req.body?.images === 'string'
+        ? req.body.images.split(',')
+        : [];
 
     if (!Number.isInteger(productId) || productId <= 0) {
       return res.status(404).json({ error: 'Product not found.' });
@@ -216,19 +373,25 @@ app.put('/api/products/:id', (req, res) => {
       return res.status(404).json({ error: 'Category not found.' });
     }
 
-    const image = imageUrl || DEFAULT_PRODUCT_IMAGE;
-    db.prepare(
-      'UPDATE products SET name = ?, price = ?, stock = ?, category_id = ?, image_url = ? WHERE id = ?'
-    ).run(name, price, stock, categoryId, image, productId);
+    const primaryImage = imageUrl || incomingImages.find(item => typeof item === 'string' && item.trim()) || DEFAULT_PRODUCT_IMAGE;
+    const finalImage = normalizeImageUrl(primaryImage);
+
+    db.prepare(`
+      UPDATE products
+      SET name = ?, price = ?, stock = ?, category_id = ?, image_url = ?, description = ?
+      WHERE id = ?
+    `).run(name, price, stock, categoryId, finalImage, description, productId);
+
+    saveProductImages(productId, incomingImages.length ? incomingImages : [finalImage], finalImage);
 
     const updatedProduct = db.prepare(`
-      SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name AS category_name, p.image_url
+      SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name AS category_name, p.image_url, p.description
       FROM products p
       JOIN categories c ON p.category_id = c.id
       WHERE p.id = ?
     `).get(productId);
 
-    return res.json(updatedProduct);
+    return res.json(serializeProduct(updatedProduct));
   } catch (err) {
     console.error('Error updating product', err);
     return res.status(500).json({ error: 'Failed to update product' });
@@ -248,6 +411,7 @@ app.delete('/api/products/:id', (req, res) => {
       return res.status(404).json({ error: 'Product not found.' });
     }
 
+    db.prepare('DELETE FROM product_images WHERE product_id = ?').run(productId);
     db.prepare('DELETE FROM products WHERE id = ?').run(productId);
     return res.json({ success: true });
   } catch (err) {
@@ -256,7 +420,6 @@ app.delete('/api/products/:id', (req, res) => {
   }
 });
 
-// Basic JSON error handler
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
