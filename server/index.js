@@ -1,18 +1,32 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
+const multer = require('multer');
 const db = require('./db');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5001;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '980580576168891';
 const DEFAULT_PRODUCT_IMAGE = '/images/no-image.svg';
-const DEFAULT_CLIENT_ORIGIN = 'http://localhost:5173';
+const DEFAULT_CLIENT_ORIGIN = 'http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:4173';
 const allowedOrigins = (process.env.CLIENT_ORIGIN || DEFAULT_CLIENT_ORIGIN)
   .split(',')
   .map(value => value.trim())
   .filter(Boolean);
 
+const isLocalOrigin = origin => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin || '');
+
 const sanitizeString = value => (typeof value === 'string' ? value.trim() : '');
+const requireAdmin = (req, res, next) => {
+  const password = req.headers['x-admin-password'];
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Admin access denied.' });
+  }
+
+  return next();
+};
+
 const normalizeImageUrl = value => {
   const trimmed = sanitizeString(value);
   if (!trimmed) {
@@ -91,7 +105,7 @@ const saveProductImages = (productId, incomingImageUrls, fallbackImage) => {
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || isLocalOrigin(origin)) {
       callback(null, true);
       return;
     }
@@ -100,8 +114,68 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb', strict: false }));
+const uploadDirectory = path.join(__dirname, 'public', 'images', 'uploads');
+fs.mkdirSync(uploadDirectory, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, callback) => callback(null, uploadDirectory),
+    filename: (_req, file, callback) => {
+      const safeName = (file.originalname || 'upload').replace(/[^a-zA-Z0-9._-]/g, '-');
+      callback(null, `${Date.now()}-${safeName}`);
+    },
+  }),
+  fileFilter: (_req, file, callback) => {
+    if (!file || !file.mimetype || !file.mimetype.startsWith('image/')) {
+      callback(new Error('Only image files are allowed.'));
+      return;
+    }
+
+    callback(null, true);
+  },
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
+
+app.post('/api/admin/login', express.text({ type: '*/*' }), (req, res) => {
+  let payload = {};
+
+  try {
+    const rawBody = typeof req.body === 'string' ? req.body : '';
+    if (rawBody.trim()) {
+      payload = JSON.parse(rawBody);
+    }
+  } catch (err) {
+    const fallbackText = String(typeof req.body === 'string' ? req.body : '').trim();
+    if (fallbackText) {
+      const match = fallbackText.match(/password\s*[:=]\s*['"]?([^'"\s,}]+)['"]?/i);
+      if (match && match[1]) {
+        payload = { password: match[1] };
+      }
+    }
+  }
+
+  const password = sanitizeString(payload?.password || req.body?.password || req.query?.password || '');
+
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Incorrect admin password.' });
+  }
+
+  return res.json({ success: true });
+});
+
+app.post('/api/uploads', requireAdmin, upload.array('images', 10), (req, res) => {
+  try {
+    const uploadedFiles = Array.isArray(req.files) ? req.files : [];
+    const imageUrls = uploadedFiles.map(file => `/images/uploads/${path.basename(file.path)}`);
+    return res.status(201).json({ images: imageUrls });
+  } catch (err) {
+    console.error('Error uploading images', err);
+    return res.status(500).json({ error: 'Failed to upload images.' });
+  }
+});
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -117,7 +191,7 @@ app.get('/api/categories', (req, res) => {
   }
 });
 
-app.post('/api/categories', (req, res) => {
+app.post('/api/categories', requireAdmin, (req, res) => {
   try {
     const name = sanitizeString(req.body?.name);
 
@@ -140,7 +214,7 @@ app.post('/api/categories', (req, res) => {
   }
 });
 
-app.put('/api/categories/:id', (req, res) => {
+app.put('/api/categories/:id', requireAdmin, (req, res) => {
   try {
     const categoryId = Number(req.params.id);
     const name = sanitizeString(req.body?.name);
@@ -173,7 +247,7 @@ app.put('/api/categories/:id', (req, res) => {
   }
 });
 
-app.delete('/api/categories/:id', (req, res) => {
+app.delete('/api/categories/:id', requireAdmin, (req, res) => {
   try {
     const categoryId = Number(req.params.id);
 
@@ -268,7 +342,7 @@ app.get('/api/categories/:id/products', (req, res) => {
   }
 });
 
-app.post('/api/products', (req, res) => {
+app.post('/api/products', requireAdmin, (req, res) => {
   try {
     const name = sanitizeString(req.body?.name);
     const price = Number(req.body?.price);
@@ -328,7 +402,7 @@ app.post('/api/products', (req, res) => {
   }
 });
 
-app.put('/api/products/:id', (req, res) => {
+app.put('/api/products/:id', requireAdmin, (req, res) => {
   try {
     const productId = Number(req.params.id);
     const name = sanitizeString(req.body?.name);
@@ -398,7 +472,7 @@ app.put('/api/products/:id', (req, res) => {
   }
 });
 
-app.delete('/api/products/:id', (req, res) => {
+app.delete('/api/products/:id', requireAdmin, (req, res) => {
   try {
     const productId = Number(req.params.id);
 

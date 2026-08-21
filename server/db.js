@@ -100,6 +100,7 @@ if (count === 0) {
       stock: 15,
       category_id: skincareId,
       image_url: '/images/deodorant.svg',
+      images: ['/images/deodorant.svg', '/images/deodorant-angle.svg', '/images/deodorant-detail.svg'],
       description: 'Long-lasting deodorant with a fresh scent and skin-friendly formula.'
     },
     {
@@ -108,6 +109,7 @@ if (count === 0) {
       stock: 20,
       category_id: skincareId,
       image_url: '/images/face-wash.svg',
+      images: ['/images/face-wash.svg', '/images/face-wash-angle.svg', '/images/face-wash-detail.svg'],
       description: 'Gentle cleansing face wash that removes dirt without drying skin.'
     },
     {
@@ -116,6 +118,7 @@ if (count === 0) {
       stock: 50,
       category_id: snacksId,
       image_url: '/images/chips.svg',
+      images: ['/images/chips.svg', '/images/chips-open.svg', '/images/chips-bag.svg'],
       description: 'Crunchy, lightly salted chips with a satisfying snack-time bite.'
     },
     {
@@ -124,6 +127,7 @@ if (count === 0) {
       stock: 10,
       category_id: clothesId,
       image_url: '/images/tshirt.svg',
+      images: ['/images/tshirt.svg', '/images/tshirt-back.svg', '/images/tshirt-detail.svg'],
       description: 'Comfort-fit cotton tee designed for everyday wear and easy layering.'
     },
     {
@@ -132,21 +136,27 @@ if (count === 0) {
       stock: 8,
       category_id: electronicsId,
       image_url: '/images/wireless-mouse.svg',
+      images: ['/images/wireless-mouse.svg', '/images/wireless-mouse-side.svg', '/images/wireless-mouse-top.svg'],
       description: 'Ergonomic wireless mouse with smooth tracking and a rechargeable battery.'
     }
   ];
 
   products.forEach(product => {
+    const productImages = Array.isArray(product.images) && product.images.length ? product.images : [product.image_url];
+    const primaryImage = productImages[0] || product.image_url || '/images/no-image.svg';
+
     const result = insertProduct.run(
       product.name,
       product.price,
       product.stock,
       product.category_id,
-      product.image_url,
+      primaryImage,
       product.description
     );
 
-    insertProductImage.run(result.lastInsertRowid, product.image_url, 0, 1);
+    productImages.forEach((imageUrl, index) => {
+      insertProductImage.run(result.lastInsertRowid, imageUrl, index, index === 0 ? 1 : 0);
+    });
   });
 }
 

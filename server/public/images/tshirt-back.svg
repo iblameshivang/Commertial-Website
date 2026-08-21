@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="T-shirt back view">
+  <rect width="400" height="400" fill="#eff6ff"/>
+  <path d="M130 100 L170 70 L230 70 L270 100 L300 140 L260 170 L270 300 L130 300 L140 170 L100 140 Z" fill="#bfdbfe" stroke="#60a5fa" stroke-width="4"/>
+  <path d="M160 120 L200 155 L240 120" fill="none" stroke="#93c5fd" stroke-width="6" stroke-linecap="round"/>
+  <text x="200" y="345" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" fill="#1d4ed8">Back view</text>
+</svg>

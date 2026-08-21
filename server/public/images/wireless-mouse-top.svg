@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Wireless mouse top view">
+  <rect width="400" height="400" fill="#eef2ff"/>
+  <rect x="85" y="120" width="230" height="140" rx="48" fill="#c7d2fe" stroke="#818cf8" stroke-width="5"/>
+  <circle cx="200" cy="190" r="28" fill="#e0e7ff"/>
+  <rect x="155" y="157" width="90" height="22" rx="10" fill="#dbeafe"/>
+  <text x="200" y="345" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#312e81">Wireless mouse</text>
+</svg>

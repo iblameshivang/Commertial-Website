@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProductCard from './ProductCard';
+import ProductImageGallery from './ProductImageGallery';
 import { API_BASE, resolveImageUrl } from './config';
 
 export default function ProductDetailPage({ onAddToCart }) {
@@ -127,32 +128,7 @@ export default function ProductDetailPage({ onAddToCart }) {
 
       <div className="product-detail-layout">
         <div className="gallery-panel">
-          <div className="main-image-shell">
-            <img
-              className="detail-main-image"
-              src={images[selectedImageIndex] || resolveImageUrl('/images/no-image.svg')}
-              alt={product.name}
-              onError={event => {
-                event.currentTarget.src = resolveImageUrl('/images/no-image.svg');
-              }}
-            />
-          </div>
-
-          {images.length > 1 && (
-            <div className="thumbnail-row">
-              {images.map((image, index) => (
-                <button
-                  key={`${image}-${index}`}
-                  type="button"
-                  className={`thumbnail ${selectedImageIndex === index ? 'active' : ''}`}
-                  onClick={() => setSelectedImageIndex(index)}
-                  aria-label={`View product image ${index + 1}`}
-                >
-                  <img src={image} alt={`${product.name} view ${index + 1}`} />
-                </button>
-              ))}
-            </div>
-          )}
+          <ProductImageGallery images={images} productName={product.name} />
         </div>
 
         <div className="detail-info">

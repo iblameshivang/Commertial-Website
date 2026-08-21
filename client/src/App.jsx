@@ -5,6 +5,8 @@ import ProductDetailPage from './ProductDetailPage';
 import { API_BASE, resolveImageUrl } from './config';
 
 const CART_KEY = 'ecommerce-demo-cart';
+const ADMIN_KEY = 'ecommerce-demo-admin';
+const ADMIN_PASSWORD = '980580576168891';
 const EMPTY_CATEGORY_FORM = { name: '' };
 const EMPTY_PRODUCT_FORM = {
   name: '',
@@ -15,6 +17,52 @@ const EMPTY_PRODUCT_FORM = {
   description: '',
   additional_images: '',
 };
+
+function AdminLoginScreen({ onUnlock }) {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async event => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Incorrect password.');
+      }
+
+      localStorage.setItem(ADMIN_KEY, 'true');
+      onUnlock();
+    } catch (err) {
+      setError(err.message || 'Unable to unlock admin access.');
+    }
+  };
+
+  return (
+    <div className="admin-login-shell">
+      <div className="admin-login-card">
+        <h2>Admin access</h2>
+        <form onSubmit={handleSubmit} className="admin-login-form">
+          <input
+            type="password"
+            value={password}
+            onChange={event => setPassword(event.target.value)}
+            placeholder="Admin password"
+            aria-label="Admin password"
+          />
+          <button type="submit" className="primary-button">Unlock admin</button>
+        </form>
+        {error && <p className="status-message error">{error}</p>}
+      </div>
+    </div>
+  );
+}
 
 function ProductListPage({ onAddToCart }) {
   const [categories, setCategories] = useState([]);
@@ -127,6 +175,8 @@ function AdminDashboard() {
   const [productSuccess, setProductSuccess] = useState('');
   const [editingProductId, setEditingProductId] = useState(null);
   const [productDeleteId, setProductDeleteId] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -197,7 +247,7 @@ function AdminDashboard() {
     const url = `${API_BASE}/api/categories${isEditing ? `/${editingCategoryId}` : ''}`;
     const response = await fetch(url, {
       method: isEditing ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': ADMIN_PASSWORD },
       body: JSON.stringify({ name: trimmedName }),
     });
 
@@ -227,7 +277,10 @@ function AdminDashboard() {
       return;
     }
 
-    const response = await fetch(`${API_BASE}/api/categories/${categoryId}`, { method: 'DELETE' });
+    const response = await fetch(`${API_BASE}/api/categories/${categoryId}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': ADMIN_PASSWORD },
+    });
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -278,6 +331,12 @@ function AdminDashboard() {
     setProductError('');
   };
 
+  const handleUploadFiles = async event => {
+    const files = Array.from(event.target.files || []).filter(file => file && file.type.startsWith('image/'));
+    setSelectedFiles(files);
+    setProductError('');
+  };
+
   const handleProductSubmit = async event => {
     event.preventDefault();
 
@@ -312,31 +371,67 @@ function AdminDashboard() {
       return;
     }
 
-    const isEditing = editingProductId !== null;
-    const url = `${API_BASE}/api/products${isEditing ? `/${editingProductId}` : ''}`;
-    const response = await fetch(url, {
-      method: isEditing ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: trimmedName,
-        price,
-        stock,
-        category_id: categoryId,
-        image_url: imageUrl,
-        description,
-        images: additionalImages,
-      }),
-    });
+    try {
+      setUploadingImages(true);
+      let uploadedImageUrls = [];
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setProductError(data.error || 'Unable to save product.');
-      return;
+      if (selectedFiles.length > 0) {
+        const formData = new FormData();
+        selectedFiles.forEach(file => formData.append('images', file));
+
+        const uploadResponse = await fetch(`${API_BASE}/api/uploads`, {
+          method: 'POST',
+          headers: { 'X-Admin-Password': ADMIN_PASSWORD },
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json().catch(() => ({}));
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData.error || 'Image upload failed.');
+        }
+
+        uploadedImageUrls = Array.isArray(uploadData.images) ? uploadData.images : [];
+      }
+
+      const mergedImages = [...new Set([
+        ...(imageUrl ? [imageUrl] : []),
+        ...uploadedImageUrls,
+        ...additionalImages,
+      ].filter(Boolean))];
+
+      const isEditing = editingProductId !== null;
+      const url = `${API_BASE}/api/products${isEditing ? `/${editingProductId}` : ''}`;
+      const response = await fetch(url, {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Password': ADMIN_PASSWORD,
+        },
+        body: JSON.stringify({
+          name: trimmedName,
+          price,
+          stock,
+          category_id: categoryId,
+          image_url: imageUrl || uploadedImageUrls[0] || mergedImages[0] || '',
+          description,
+          images: mergedImages,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to save product.');
+      }
+
+      setProductSuccess(isEditing ? 'Product updated successfully.' : 'Product added successfully.');
+      setSelectedFiles([]);
+      resetProductState({ keepMessage: true });
+      await fetchData();
+    } catch (err) {
+      setProductError(err.message || 'Unable to save product.');
+    } finally {
+      setUploadingImages(false);
     }
-
-    setProductSuccess(isEditing ? 'Product updated successfully.' : 'Product added successfully.');
-    resetProductState({ keepMessage: true });
-    await fetchData();
   };
 
   const handleProductDelete = async productId => {
@@ -346,7 +441,10 @@ function AdminDashboard() {
       return;
     }
 
-    const response = await fetch(`${API_BASE}/api/products/${productId}`, { method: 'DELETE' });
+    const response = await fetch(`${API_BASE}/api/products/${productId}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': ADMIN_PASSWORD },
+    });
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -486,14 +584,21 @@ function AdminDashboard() {
                 <input type="text" name="additional_images" value={productForm.additional_images} onChange={handleProductInputChange} placeholder="Comma separated image URLs" />
               </label>
               <label className="full-width">
+                <span>Upload product images</span>
+                <input type="file" accept="image/*" multiple onChange={handleUploadFiles} />
+                {selectedFiles.length > 0 && (
+                  <small className="file-list">Selected: {selectedFiles.map(file => file.name).join(', ')}</small>
+                )}
+              </label>
+              <label className="full-width">
                 <span>Description</span>
                 <textarea name="description" rows="4" value={productForm.description} onChange={handleProductInputChange} placeholder="Product description" />
               </label>
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="primary-button">
-                {editingProductId !== null ? 'Save Product' : 'Add Product'}
+              <button type="submit" className="primary-button" disabled={uploadingImages}>
+                {uploadingImages ? 'Uploading...' : (editingProductId !== null ? 'Save Product' : 'Add Product')}
               </button>
               <button
                 type="button"
@@ -629,6 +734,13 @@ export default function App() {
     }
   });
   const [cartOpen, setCartOpen] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    try {
+      return localStorage.getItem(ADMIN_KEY) === 'true';
+    } catch (err) {
+      return false;
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
@@ -738,7 +850,16 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<ProductListPage onAddToCart={addToCart} />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route
+          path="/admin"
+          element={
+            isAdminAuthenticated ? (
+              <AdminDashboard />
+            ) : (
+              <AdminLoginScreen onUnlock={() => setIsAdminAuthenticated(true)} />
+            )
+          }
+        />
         <Route path="/product/:productId" element={<ProductDetailPage onAddToCart={addToCart} />} />
         <Route path="*" element={<ProductListPage onAddToCart={addToCart} />} />
       </Routes>

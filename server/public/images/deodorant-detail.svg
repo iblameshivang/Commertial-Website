@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Deodorant detail view">
+  <rect width="400" height="400" fill="#f8fafc"/>
+  <circle cx="200" cy="200" r="120" fill="#e0f2fe"/>
+  <rect x="145" y="80" width="110" height="220" rx="28" fill="#dbeafe" stroke="#7dd3fc" stroke-width="5"/>
+  <rect x="160" y="96" width="80" height="30" rx="10" fill="#bfdbfe"/>
+  <path d="M170 180 C200 160, 230 160, 240 180 L240 250 C230 275, 170 275, 160 250 Z" fill="#ffffff" opacity="0.85"/>
+  <text x="200" y="345" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#0f172a">Fresh scent</text>
+</svg>
