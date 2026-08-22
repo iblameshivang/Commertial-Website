@@ -3,11 +3,11 @@ import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import ProductCard from './ProductCard';
 import ProductDetailPage from './ProductDetailPage';
 import { API_BASE, resolveImageUrl } from './config';
-import VisualDashboard from './AdminDashboard';
+import AdminDashboardView from './AdminDashboard';
 
 const CART_KEY = 'ecommerce-demo-cart';
 const ADMIN_KEY = 'ecommerce-demo-admin';
-const ADMIN_PASSWORD = '980580576168891';
+const ADMIN_PASSWORD = 'MissionNepal';
 const EMPTY_CATEGORY_FORM = { name: '' };
 const EMPTY_PRODUCT_FORM = {
   name: '',
@@ -23,7 +23,7 @@ function AdminLoginScreen({ onUnlock }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async event => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     try {
@@ -38,7 +38,7 @@ function AdminLoginScreen({ onUnlock }) {
         throw new Error(data.error || 'Incorrect password.');
       }
 
-      localStorage.setItem(ADMIN_KEY, 'true');
+      sessionStorage.setItem(ADMIN_KEY, 'true');
       onUnlock();
     } catch (err) {
       setError(err.message || 'Unable to unlock admin access.');
@@ -53,10 +53,13 @@ function AdminLoginScreen({ onUnlock }) {
           <input
             type="password"
             value={password}
-            onChange={event => setPassword(event.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
             placeholder="Admin password"
             aria-label="Admin password"
           />
+          <p className="admin-demo-key-hint">
+            💡 <strong>Demo Key:</strong> Use <code>MissionNepal</code> to unlock.
+          </p>
           <button type="submit" className="primary-button">Unlock admin</button>
         </form>
         {error && <p className="status-message error">{error}</p>}
@@ -467,7 +470,7 @@ const openProductForm = (product = null) => {
       {error && <p className="error">Error: {error}</p>}
 
       {!loading && !error && (
-        <VisualDashboard products={products} categories={categories} />
+        <AdminDashboardView products={products} categories={categories} />
       )}
 
       <section className="admin-section">
@@ -733,7 +736,7 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     try {
-      return localStorage.getItem(ADMIN_KEY) === 'true';
+      return sessionStorage.getItem(ADMIN_KEY) === 'true';
     } catch (err) {
       return false;
     }

@@ -7,7 +7,7 @@ const db = require('./db');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5001;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '980580576168891';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'MissionNepal';
 const DEFAULT_PRODUCT_IMAGE = '/images/no-image.svg';
 const DEFAULT_CLIENT_ORIGIN = 'http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:4173';
 const allowedOrigins = (process.env.CLIENT_ORIGIN || DEFAULT_CLIENT_ORIGIN)
@@ -104,16 +104,10 @@ const saveProductImages = (productId, incomingImageUrls, fallbackImage) => {
 };
 
 app.use(cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || isLocalOrigin(origin)) {
-      callback(null, true);
-      return;
-    }
-
-    callback(new Error('Origin not permitted by CORS'));
-  },
+  origin: true,
   credentials: true,
 }));
+
 app.use(express.json({ limit: '10mb', strict: false }));
 const uploadDirectory = path.join(__dirname, 'public', 'images', 'uploads');
 fs.mkdirSync(uploadDirectory, { recursive: true });
@@ -499,6 +493,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });

@@ -51,8 +51,10 @@ export default function AdminDashboard({ products = [], categories = [] }) {
       totalStockSum += stock;
 
       // Safely map category name
-      const { key: catKey, displayName: catDisplayName } = normalizeCategory(prod.category_name);
-
+      // Safely map category name across different backend response formats
+      const rawCatName = prod.category_name || prod.category || 'Uncategorized';
+      const { key: catKey, displayName: catDisplayName } = normalizeCategory(rawCatName);
+      
       if (!categoryMap.has(catKey)) {
         categoryMap.set(catKey, { displayName: catDisplayName, stock: 0, productCount: 0, fromProp: false });
       }
@@ -137,8 +139,8 @@ export default function AdminDashboard({ products = [], categories = [] }) {
           padding: 20px;
           box-sizing: border-box;
           background: var(--adm-bg);
-          height: 100vh;
-          overflow: hidden;
+          min-height: 100vh;
+          overflow: visible;
           display: flex;
           flex-direction: column;
         }
