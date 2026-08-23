@@ -2,11 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProductCard from './ProductCard';
 import ProductImageGallery from './ProductImageGallery';
+import { useCart } from './CartContext';
 import { API_BASE, resolveImageUrl } from './config';
 
-export default function ProductDetailPage({ onAddToCart }) {
+export default function ProductDetailPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
 
   const [product, setProduct] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
@@ -83,17 +85,11 @@ export default function ProductDetailPage({ onAddToCart }) {
   };
 
   const handleAddToCart = () => {
-    if (!product) {
+    if (!product || !isAvailable) {
       return;
     }
 
-    if (!isAvailable) {
-      return;
-    }
-
-    if (typeof onAddToCart === 'function') {
-      onAddToCart(product, quantity);
-    }
+    addToCart(product, quantity);
   };
 
   if (loading) {
@@ -154,6 +150,9 @@ export default function ProductDetailPage({ onAddToCart }) {
             <button type="button" className="primary-button add-to-cart-button large" onClick={handleAddToCart} disabled={!isAvailable}>
               {isAvailable ? 'Add to Cart' : 'Unavailable'}
             </button>
+            <button type="button" className="secondary-button add-to-cart-button large" onClick={() => navigate('/cart')}>
+              Go to Cart
+            </button>
           </div>
         </div>
       </div>
@@ -163,7 +162,7 @@ export default function ProductDetailPage({ onAddToCart }) {
         {recommendations.length > 0 ? (
           <div className="recommendation-grid">
             {recommendations.map(item => (
-              <ProductCard key={item.id} product={item} onAddToCart={onAddToCart} />
+              <ProductCard key={item.id} product={item} />
             ))}
           </div>
         ) : (

@@ -1,11 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from './ProductCard';
 import ProductDetailPage from './ProductDetailPage';
+import CartDrawer from './CartDrawer';
+import CartPage from './CartPage';
+import CheckoutPage from './CheckoutPage';
+import OrderConfirmationPage from './OrderConfirmationPage';
+import { useCart } from './CartContext';
 import { API_BASE, resolveImageUrl } from './config';
 import AdminDashboardView from './AdminDashboard';
 
-const CART_KEY = 'ecommerce-demo-cart';
 const ADMIN_KEY = 'ecommerce-demo-admin';
 const ADMIN_PASSWORD = 'MissionNepal';
 const EMPTY_CATEGORY_FORM = { name: '' };
@@ -68,7 +72,7 @@ function AdminLoginScreen({ onUnlock }) {
   );
 }
 
-function ProductListPage({ onAddToCart }) {
+function ProductListPage() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +150,7 @@ function ProductListPage({ onAddToCart }) {
             ) : (
               <div className="product-grid">
                 {displayedProducts.map(product => (
-                  <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+                  <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             )}
@@ -677,63 +681,21 @@ const openProductForm = (product = null) => {
   );
 }
 
-function CartPanel({ cartItems, onUpdateQuantity, onRemoveItem, total, onClose }) {
+function CartIcon() {
   return (
-    <aside className="cart-panel">
-      <div className="cart-panel-header">
-        <h2>Your Cart</h2>
-        <button type="button" className="close-cart" onClick={onClose}>Close</button>
-      </div>
-
-      {cartItems.length === 0 ? (
-        <p className="empty-cart">Your cart is empty. Add a few essentials to get started.</p>
-      ) : (
-        <>
-          <div className="cart-items">
-            {cartItems.map(item => (
-              <div key={item.id} className="cart-item">
-                <img src={resolveImageUrl(item.image || item.images?.[0] || '/images/no-image.svg')} alt={item.name} onError={event => {
-                  event.currentTarget.src = resolveImageUrl('/images/no-image.svg');
-                }} />
-                <div className="cart-item-details">
-                  <h3>{item.name}</h3>
-                  <p>₹{Number(item.price).toFixed(2)}</p>
-                  <div className="cart-controls">
-                    <button type="button" onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}>-</button>
-                    <span>{item.quantity}</span>
-                    <button type="button" onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}>+</button>
-                  </div>
-                </div>
-                <button type="button" className="remove-cart-item" onClick={() => onRemoveItem(item.id)}>Remove</button>
-              </div>
-            ))}
-          </div>
-
-          <div className="cart-summary">
-            <div>
-              <span>Subtotal</span>
-              <strong>₹{total.toFixed(2)}</strong>
-            </div>
-            <button type="button" className="primary-button">Checkout</button>
-          </div>
-        </>
-      )}
-    </aside>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="20" r="1.5" />
+      <circle cx="18" cy="20" r="1.5" />
+      <path d="M2 3h2.5l2.2 11.2a1.5 1.5 0 0 0 1.5 1.2h9.4a1.5 1.5 0 0 0 1.5-1.2L21 7H5.2" />
+    </svg>
   );
 }
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const storedValue = localStorage.getItem(CART_KEY);
-      return storedValue ? JSON.parse(storedValue) : [];
-    } catch (err) {
-      return [];
-    }
-  });
-  const [cartOpen, setCartOpen] = useState(false);
+  const { cartCount, openDrawer, toast, notice, dismissNotice } = useCart();
+
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     try {
       return sessionStorage.getItem(ADMIN_KEY) === 'true';
@@ -742,69 +704,7 @@ export default function App() {
     }
   });
 
-  useEffect(() => {
-    localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
-  }, [cartItems]);
-
-  const addToCart = (product, quantity = 1) => {
-    if (!product || Number(product.stock ?? 0) <= 0) {
-      return;
-    }
-
-    const requestedQuantity = Number(quantity) > 0 ? Number(quantity) : 1;
-
-    setCartItems(currentItems => {
-      const existingItem = currentItems.find(item => item.id === product.id);
-      const stockLimit = Number(product.stock ?? 0);
-
-      if (existingItem) {
-        const nextQuantity = Math.min(existingItem.quantity + requestedQuantity, stockLimit);
-        return currentItems.map(item => item.id === product.id
-          ? { ...item, quantity: nextQuantity, price: Number(product.price || item.price) }
-          : item);
-      }
-
-      return [
-        ...currentItems,
-        {
-          id: product.id,
-          name: product.name,
-          image: product.image_url || product.images?.[0] || '/images/no-image.svg',
-          price: Number(product.price || 0),
-          stock: stockLimit,
-          quantity: Math.min(requestedQuantity, stockLimit),
-        },
-      ];
-    });
-
-    setCartOpen(true);
-  };
-
-  const updateCartItem = (productId, nextQuantity) => {
-    setCartItems(currentItems => currentItems
-      .map(item => {
-        if (item.id !== productId) {
-          return item;
-        }
-
-        const safeQuantity = Number(nextQuantity);
-        if (!Number.isFinite(safeQuantity)) {
-          return item;
-        }
-
-        const stockLimit = Number(item.stock || 1);
-        const clampedQuantity = Math.min(Math.max(safeQuantity, 1), stockLimit);
-        return { ...item, quantity: clampedQuantity };
-      })
-      .filter(item => item.quantity > 0));
-  };
-
-  const removeCartItem = productId => {
-    setCartItems(currentItems => currentItems.filter(item => item.id !== productId));
-  };
-
-  const cartCount = useMemo(() => cartItems.reduce((count, item) => count + item.quantity, 0), [cartItems]);
-  const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + Number(item.price || 0) * Number(item.quantity || 0), 0), [cartItems]);
+  const isAdminRoute = location.pathname === '/admin';
 
   return (
     <div className="container">
@@ -813,9 +713,18 @@ export default function App() {
           <h1>
             <Link to="/" className="brand-link">eCommerce Demo</Link>
           </h1>
-          <button type="button" className="cart-toggle" onClick={() => setCartOpen(value => !value)}>
-            Cart ({cartCount})
-          </button>
+          {!isAdminRoute && (
+            <button
+              type="button"
+              className="cart-toggle"
+              onClick={openDrawer}
+              aria-label={`Open cart, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`}
+            >
+              <CartIcon />
+              <span>Cart</span>
+              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            </button>
+          )}
         </div>
 
         <p className="tagline">Simple demo showing SQLite → Express → React</p>
@@ -830,7 +739,7 @@ export default function App() {
           </button>
           <button
             type="button"
-            className={location.pathname === '/admin' ? 'view-button active' : 'view-button'}
+            className={isAdminRoute ? 'view-button active' : 'view-button'}
             onClick={() => navigate('/admin')}
           >
             ⚙️ Admin View
@@ -838,18 +747,15 @@ export default function App() {
         </div>
       </header>
 
-      {cartOpen && (
-        <CartPanel
-          cartItems={cartItems}
-          onUpdateQuantity={updateCartItem}
-          onRemoveItem={removeCartItem}
-          total={cartTotal}
-          onClose={() => setCartOpen(false)}
-        />
+      {notice && (
+        <div className="cart-notice" role="status">
+          <span>{notice}</span>
+          <button type="button" className="link-button" onClick={dismissNotice}>Dismiss</button>
+        </div>
       )}
 
       <Routes>
-        <Route path="/" element={<ProductListPage onAddToCart={addToCart} />} />
+        <Route path="/" element={<ProductListPage />} />
         <Route
           path="/admin"
           element={
@@ -860,9 +766,16 @@ export default function App() {
             )
           }
         />
-        <Route path="/product/:productId" element={<ProductDetailPage onAddToCart={addToCart} />} />
-        <Route path="*" element={<ProductListPage onAddToCart={addToCart} />} />
+        <Route path="/product/:productId" element={<ProductDetailPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/order-confirmation/:orderCode" element={<OrderConfirmationPage />} />
+        <Route path="*" element={<ProductListPage />} />
       </Routes>
+
+      <CartDrawer />
+
+      {toast && <div className="cart-toast" role="status">✓ {toast}</div>}
     </div>
   );
 }
