@@ -1,6 +1,4 @@
-export const API_BASE = (
-  import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:5001`
-).replace(/\/$/, '');
+export const API_BASE = '';
 
 export const FALLBACK_IMAGE = '/images/no-image.svg';
 
@@ -19,8 +17,8 @@ export function resolveImageUrl(imageUrl) {
   }
 
   if (trimmed.startsWith('/')) {
-    return `${API_BASE}${trimmed}`;
+    return trimmed;
   }
 
-  return `${API_BASE}/${trimmed.replace(/^\.?\//, '')}`;
+  return `/${trimmed.replace(/^\.?\//, '')}`;
 }
