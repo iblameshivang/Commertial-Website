@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from './CartContext';
 import { resolveImageUrl } from './config';
 
-export default function ProductCard({ product, onAddToCart, showAddToCart = true }) {
+export default function ProductCard({ product, showAddToCart = true }) {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const imageSource = resolveImageUrl(product?.image_url || product?.images?.[0]);
   const isAvailable = Number(product?.stock ?? 0) > 0;
 
@@ -14,10 +16,9 @@ export default function ProductCard({ product, onAddToCart, showAddToCart = true
   };
 
   const handleAddToCart = event => {
+    // Without this the card's own click handler would navigate to the detail page.
     event.stopPropagation();
-    if (typeof onAddToCart === 'function') {
-      onAddToCart(product, 1);
-    }
+    addToCart(product, 1);
   };
 
   return (

@@ -5,3 +5,4 @@ client/dist/
 server/data/demo.db
 .env
 .DS_Store
+.claude/

@@ -9,6 +9,12 @@ const app = express();
 const PORT = Number(process.env.PORT) || 5001;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'MissionNepal';
 const DEFAULT_PRODUCT_IMAGE = '/images/no-image.svg';
+const DELIVERY_FEE = 49;
+const FREE_DELIVERY_THRESHOLD = 499;
+const DELIVERY_DAYS = 5;
+const PHONE_PATTERN = /^[6-9]\d{9}$/;
+const PINCODE_PATTERN = /^\d{6}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_CLIENT_ORIGIN = 'http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:4173';
 const allowedOrigins = (process.env.CLIENT_ORIGIN || DEFAULT_CLIENT_ORIGIN)
   .split(',')
@@ -101,6 +107,116 @@ const saveProductImages = (productId, incomingImageUrls, fallbackImage) => {
   });
 
   db.prepare('UPDATE products SET image_url = ? WHERE id = ?').run(primaryImage, productId);
+};
+
+const roundCurrency = value => Math.round(Number(value || 0) * 100) / 100;
+
+const calculateDeliveryFee = subtotal => (subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE);
+
+const buildOrderCode = (orderId, orderedAt) => {
+  const datePart = orderedAt.slice(0, 10).replace(/-/g, '');
+  return `ORD-${datePart}-${String(orderId).padStart(4, '0')}`;
+};
+
+const serializeOrder = order => {
+  const items = db.prepare(`
+    SELECT id, product_id, product_name, image_url, unit_price, quantity, line_total
+    FROM order_items
+    WHERE order_id = ?
+    ORDER BY id ASC
+  `).all(order.id);
+
+  return {
+    ...order,
+    subtotal: Number(order.subtotal || 0),
+    delivery_fee: Number(order.delivery_fee || 0),
+    total: Number(order.total || 0),
+    items: items.map(item => ({
+      ...item,
+      image_url: normalizeImageUrl(item.image_url),
+      unit_price: Number(item.unit_price || 0),
+      quantity: Number(item.quantity || 0),
+      line_total: Number(item.line_total || 0),
+    })),
+  };
+};
+
+// Returns { address } on success or { error } with the first problem found.
+const validateAddress = body => {
+  const address = {
+    customer_name: sanitizeString(body?.customer_name),
+    phone: sanitizeString(body?.phone).replace(/[\s-]/g, ''),
+    email: sanitizeString(body?.email),
+    address_line1: sanitizeString(body?.address_line1),
+    address_line2: sanitizeString(body?.address_line2),
+    city: sanitizeString(body?.city),
+    state: sanitizeString(body?.state),
+    pincode: sanitizeString(body?.pincode),
+    payment_method: sanitizeString(body?.payment_method) || 'COD',
+  };
+
+  if (!address.customer_name) {
+    return { error: 'Full name is required.' };
+  }
+
+  if (!PHONE_PATTERN.test(address.phone)) {
+    return { error: 'Enter a valid 10-digit mobile number.' };
+  }
+
+  if (address.email && !EMAIL_PATTERN.test(address.email)) {
+    return { error: 'Enter a valid email address, or leave it blank.' };
+  }
+
+  if (!address.address_line1) {
+    return { error: 'Address is required.' };
+  }
+
+  if (!address.city) {
+    return { error: 'City is required.' };
+  }
+
+  if (!address.state) {
+    return { error: 'State is required.' };
+  }
+
+  if (!PINCODE_PATTERN.test(address.pincode)) {
+    return { error: 'Enter a valid 6-digit pincode.' };
+  }
+
+  if (address.payment_method !== 'COD') {
+    return { error: 'Only Cash on Delivery is supported right now.' };
+  }
+
+  return { address };
+};
+
+// Merges duplicate product_id entries and validates shape. Prices are ignored here on
+// purpose — they are always read from the database when the order is priced.
+const normalizeOrderItems = rawItems => {
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    return { error: 'Your cart is empty.' };
+  }
+
+  const quantityByProductId = new Map();
+
+  for (const rawItem of rawItems) {
+    const productId = Number(rawItem?.product_id ?? rawItem?.id);
+    const quantity = Number(rawItem?.quantity);
+
+    if (!Number.isInteger(productId) || productId <= 0) {
+      return { error: 'Cart contains an invalid product.' };
+    }
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return { error: 'Cart quantities must be whole numbers greater than zero.' };
+    }
+
+    quantityByProductId.set(productId, (quantityByProductId.get(productId) || 0) + quantity);
+  }
+
+  return {
+    items: [...quantityByProductId].map(([product_id, quantity]) => ({ product_id, quantity })),
+  };
 };
 
 app.use(cors({
@@ -485,6 +601,183 @@ app.delete('/api/products/:id', requireAdmin, (req, res) => {
   } catch (err) {
     console.error('Error deleting product', err);
     return res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
+app.post('/api/orders', (req, res) => {
+  try {
+    const addressResult = validateAddress(req.body);
+    if (addressResult.error) {
+      return res.status(400).json({ error: addressResult.error });
+    }
+
+    const itemsResult = normalizeOrderItems(req.body?.items);
+    if (itemsResult.error) {
+      return res.status(400).json({ error: itemsResult.error });
+    }
+
+    const { address } = addressResult;
+    const findProduct = db.prepare('SELECT id, name, price, stock, image_url FROM products WHERE id = ?');
+    const pricedItems = [];
+
+    for (const item of itemsResult.items) {
+      const product = findProduct.get(item.product_id);
+
+      if (!product) {
+        return res.status(404).json({
+          error: 'A product in your cart is no longer available. Please review your cart.',
+          product_id: item.product_id,
+        });
+      }
+
+      const availableStock = Number(product.stock || 0);
+      if (availableStock < item.quantity) {
+        return res.status(409).json({
+          error: availableStock === 0
+            ? `${product.name} just went out of stock.`
+            : `Only ${availableStock} left of ${product.name}.`,
+          product_id: product.id,
+          available_stock: availableStock,
+        });
+      }
+
+      const unitPrice = roundCurrency(product.price);
+      pricedItems.push({
+        product_id: product.id,
+        product_name: product.name,
+        image_url: normalizeImageUrl(product.image_url),
+        unit_price: unitPrice,
+        quantity: item.quantity,
+        line_total: roundCurrency(unitPrice * item.quantity),
+      });
+    }
+
+    const subtotal = roundCurrency(pricedItems.reduce((sum, item) => sum + item.line_total, 0));
+    const deliveryFee = calculateDeliveryFee(subtotal);
+    const total = roundCurrency(subtotal + deliveryFee);
+
+    const orderedAtDate = new Date();
+    const expectedDeliveryDate = new Date(orderedAtDate.getTime() + DELIVERY_DAYS * 24 * 60 * 60 * 1000);
+    const orderedAt = orderedAtDate.toISOString();
+    const expectedDeliveryAt = expectedDeliveryDate.toISOString();
+
+    db.exec('BEGIN');
+
+    let orderId;
+    try {
+      const insertResult = db.prepare(`
+        INSERT INTO orders (
+          order_code, customer_name, phone, email,
+          address_line1, address_line2, city, state, pincode,
+          payment_method, subtotal, delivery_fee, total, status,
+          ordered_at, expected_delivery_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        `PENDING-${orderedAt}`,
+        address.customer_name,
+        address.phone,
+        address.email || null,
+        address.address_line1,
+        address.address_line2 || null,
+        address.city,
+        address.state,
+        address.pincode,
+        address.payment_method,
+        subtotal,
+        deliveryFee,
+        total,
+        'Confirmed',
+        orderedAt,
+        expectedDeliveryAt
+      );
+
+      orderId = Number(insertResult.lastInsertRowid);
+
+      db.prepare('UPDATE orders SET order_code = ? WHERE id = ?')
+        .run(buildOrderCode(orderId, orderedAt), orderId);
+
+      const insertItem = db.prepare(`
+        INSERT INTO order_items (order_id, product_id, product_name, image_url, unit_price, quantity, line_total)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      // Guarded on stock so a concurrent order cannot push stock negative.
+      const reduceStock = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?');
+
+      for (const item of pricedItems) {
+        insertItem.run(
+          orderId,
+          item.product_id,
+          item.product_name,
+          item.image_url,
+          item.unit_price,
+          item.quantity,
+          item.line_total
+        );
+
+        const stockResult = reduceStock.run(item.quantity, item.product_id, item.quantity);
+        if (stockResult.changes === 0) {
+          throw Object.assign(new Error(`${item.product_name} just went out of stock.`), { statusCode: 409 });
+        }
+      }
+
+      db.exec('COMMIT');
+    } catch (transactionError) {
+      db.exec('ROLLBACK');
+      throw transactionError;
+    }
+
+    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+    return res.status(201).json(serializeOrder(order));
+  } catch (err) {
+    if (err && err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+
+    console.error('Error creating order', err);
+    return res.status(500).json({ error: 'Failed to place order' });
+  }
+});
+
+app.get('/api/orders', requireAdmin, (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT o.*, COUNT(oi.id) AS item_count
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      GROUP BY o.id
+      ORDER BY o.id DESC
+    `).all();
+
+    return res.json(rows.map(row => ({
+      ...row,
+      subtotal: Number(row.subtotal || 0),
+      delivery_fee: Number(row.delivery_fee || 0),
+      total: Number(row.total || 0),
+      item_count: Number(row.item_count || 0),
+    })));
+  } catch (err) {
+    console.error('Error fetching orders', err);
+    return res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+app.get('/api/orders/:orderCode', (req, res) => {
+  try {
+    const orderCode = sanitizeString(req.params.orderCode);
+
+    if (!orderCode) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+
+    const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(orderCode);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+
+    return res.json(serializeOrder(order));
+  } catch (err) {
+    console.error('Error fetching order', err);
+    return res.status(500).json({ error: 'Failed to fetch order' });
   }
 });
 

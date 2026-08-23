@@ -54,6 +54,49 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_code TEXT NOT NULL,
+    customer_name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT,
+    address_line1 TEXT NOT NULL,
+    address_line2 TEXT,
+    city TEXT NOT NULL,
+    state TEXT NOT NULL,
+    pincode TEXT NOT NULL,
+    payment_method TEXT NOT NULL DEFAULT 'COD',
+    subtotal REAL NOT NULL,
+    delivery_fee REAL NOT NULL DEFAULT 0,
+    total REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Confirmed',
+    ordered_at TEXT NOT NULL,
+    expected_delivery_at TEXT NOT NULL
+  )
+`);
+
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_code ON orders(order_code)');
+
+// product_id is nullable with ON DELETE SET NULL so deleting a product never fails
+// because of an existing order. The name/image/price snapshot keeps old orders readable.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS order_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    product_id INTEGER,
+    product_name TEXT NOT NULL,
+    image_url TEXT,
+    unit_price REAL NOT NULL,
+    quantity INTEGER NOT NULL,
+    line_total REAL NOT NULL,
+    FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE SET NULL
+  )
+`);
+
+db.exec('CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)');
+
 const ensureProductImages = () => {
   const missingImageRows = db.prepare(`
     SELECT p.id, p.image_url
