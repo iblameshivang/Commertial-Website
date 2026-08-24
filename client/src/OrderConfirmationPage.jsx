@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Check, Phone, Mail, MapPin, Package, ArrowRight, ShieldCheck } from 'lucide-react';
 import { API_BASE, resolveImageUrl } from './config';
 import { countDaysFromNow, formatCurrency, formatDate, formatDateTime } from './format';
 
@@ -17,13 +18,13 @@ export default function OrderConfirmationPage() {
 
       try {
         const response = await fetch(`${API_BASE}/api/orders/${encodeURIComponent(orderCode)}`);
-        const data = await response.json().catch(() => ({}));
+        const json = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          throw new Error(data.error || 'Unable to load this order.');
+          throw new Error(json.error || json.message || 'Unable to load this order.');
         }
 
-        setOrder(data);
+        setOrder(json.data || json);
       } catch (err) {
         setError(err.message || 'Unable to load this order.');
         setOrder(null);
@@ -38,14 +39,14 @@ export default function OrderConfirmationPage() {
   }, [orderCode]);
 
   if (loading) {
-    return <p className="info">Loading your order…</p>;
+    return <p className="info">Loading order verification…</p>;
   }
 
   if (error || !order) {
     return (
       <div className="empty-state">
         <h2>Order not found</h2>
-        <p>{error || 'We could not find an order with that ID.'}</p>
+        <p>{error || 'We could not find an order with that reference.'}</p>
         <Link to="/" className="primary-button inline-button">Back to store</Link>
       </div>
     );
@@ -56,28 +57,30 @@ export default function OrderConfirmationPage() {
   return (
     <div className="confirmation-page">
       <section className="confirmation-hero">
-        <div className="confirmation-tick" aria-hidden="true">✓</div>
-        <h1>Order Confirmed!</h1>
+        <div className="confirmation-tick" aria-hidden="true">
+          <Check size={28} strokeWidth={2.5} />
+        </div>
+        <h1>Order Confirmed</h1>
         <p className="subtle">
-          Thank you, {order.customer_name.split(' ')[0]}. Your order has been placed successfully.
+          Thank you, {order.customer_name?.split(' ')[0] || 'Client'}. Your order has been placed into atelier preparation.
         </p>
       </section>
 
       <section className="confirmation-highlights">
         <div className="highlight-card">
-          <small>Order ID</small>
+          <small>Order Reference</small>
           <strong className="order-code">{order.order_code}</strong>
         </div>
         <div className="highlight-card">
-          <small>Order Date</small>
+          <small>Date & Time</small>
           <strong>{formatDateTime(order.ordered_at)}</strong>
         </div>
         <div className="highlight-card accent">
-          <small>Expected Delivery</small>
+          <small>Expected White-Glove Delivery</small>
           <strong>{formatDate(order.expected_delivery_at)}</strong>
           {daysToDelivery !== null && (
             <span className="delivery-eta">
-              {daysToDelivery === 0 ? 'Arriving today' : `in about ${daysToDelivery} ${daysToDelivery === 1 ? 'day' : 'days'}`}
+              {daysToDelivery === 0 ? 'Arriving today' : `in approx. ${daysToDelivery} ${daysToDelivery === 1 ? 'day' : 'days'}`}
             </span>
           )}
         </div>
@@ -85,8 +88,8 @@ export default function OrderConfirmationPage() {
 
       <div className="confirmation-layout">
         <section className="confirmation-panel">
-          <h2>Items in this order ({order.items.length})</h2>
-          {order.items.map(item => (
+          <h2>Items Reserved ({order.items?.length || 0})</h2>
+          {order.items?.map(item => (
             <div key={item.id} className="summary-item">
               <img
                 src={resolveImageUrl(item.image_url)}
@@ -112,41 +115,52 @@ export default function OrderConfirmationPage() {
               <span>{order.address_line1}</span>
               {order.address_line2 ? <span>{order.address_line2}</span> : null}
               <span>{order.city}, {order.state} – {order.pincode}</span>
-              <span>📞 {order.phone}</span>
-              {order.email ? <span>✉ {order.email}</span> : null}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Phone size={14} color="var(--color-sage)" />
+                {order.phone}
+              </span>
+              {order.email ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Mail size={14} color="var(--color-sage)" />
+                  {order.email}
+                </span>
+              ) : null}
             </address>
           </section>
 
           <section className="confirmation-panel">
-            <h2>Payment Summary</h2>
+            <h2>Payment & Settlement</h2>
             <div className="price-row">
               <span>Subtotal</span>
               <span>{formatCurrency(order.subtotal)}</span>
             </div>
             <div className="price-row">
-              <span>Delivery Charges</span>
+              <span>White-Glove Shipping</span>
               {order.delivery_fee === 0
-                ? <span className="free-tag">FREE</span>
+                ? <span className="free-tag">Complimentary</span>
                 : <span>{formatCurrency(order.delivery_fee)}</span>}
             </div>
             <div className="price-row total">
-              <span>Total Paid</span>
+              <span>Total Amount</span>
               <span>{formatCurrency(order.total)}</span>
             </div>
             <p className="payment-mode">
-              Payment Mode: <strong>{order.payment_method === 'COD' ? 'Cash on Delivery' : order.payment_method}</strong>
+              Payment Method: <strong>{order.payment_method === 'COD' ? 'Cash on Delivery (COD)' : order.payment_method}</strong>
             </p>
             <p className="order-status">
-              Status: <span className="status-pill">{order.status}</span>
+              Atelier Status: <span className="status-pill">{order.status}</span>
             </p>
           </section>
         </div>
       </div>
 
       <div className="confirmation-actions">
-        <Link to="/" className="primary-button inline-button">Continue Shopping</Link>
+        <Link to="/" className="primary-button inline-button">
+          <span>Continue Exploring</span>
+          <ArrowRight size={16} />
+        </Link>
         <p className="subtle small-note">
-          Save your Order ID <strong>{order.order_code}</strong> — you can revisit this page anytime to track it.
+          Save your Order Reference <strong>{order.order_code}</strong> to track your shipment with our private concierge.
         </p>
       </div>
     </div>

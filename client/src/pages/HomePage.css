@@ -1,0 +1,277 @@
+/* ============================================
+   ShopVerse Home Page — Minimal Luxury
+   ============================================ */
+
+.shopverse-home {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.shopverse-home__content {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 80px 32px 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 120px;
+}
+
+/* ── Section Header ── */
+.shopverse-section {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.shopverse-section__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.shopverse-section__header--center {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.shopverse-section__eyebrow {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-sage);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.shopverse-section__title {
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--color-peacock);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.shopverse-section__view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-spruce);
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 200ms ease;
+}
+
+.shopverse-section__view-all:hover {
+  color: var(--color-peacock);
+}
+
+/* ── Curated & Arrivals Grid ── */
+.shopverse-home__curated-grid,
+.shopverse-home__arrivals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+}
+
+/* ── Category Cards (Aspect Ratio 4:5 with Gradient-Dark) ── */
+.shopverse-home__category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+}
+
+.shopverse-category-card {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.shopverse-category-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-xl);
+}
+
+.shopverse-category-card__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.shopverse-category-card:hover .shopverse-category-card__bg {
+  transform: scale(1.08);
+}
+
+.shopverse-category-card__overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-dark);
+  opacity: 0.75;
+  transition: opacity 400ms ease;
+}
+
+.shopverse-category-card:hover .shopverse-category-card__overlay {
+  opacity: 0.65;
+}
+
+.shopverse-category-card__content {
+  position: absolute;
+  inset: 0;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  z-index: 2;
+}
+
+.shopverse-category-card__tag {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-sage);
+  margin-bottom: 8px;
+}
+
+.shopverse-category-card__name {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--color-lace);
+  margin: 0 0 16px;
+  line-height: 1.2;
+}
+
+.shopverse-category-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shopverse-category-card__count {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-arctic);
+}
+
+.shopverse-category-card__btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 237, 209, 0.2);
+  backdrop-filter: blur(8px);
+  color: var(--color-lace);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.shopverse-category-card:hover .shopverse-category-card__btn {
+  background: var(--color-sapphire);
+  color: var(--color-peacock);
+  transform: scale(1.1);
+}
+
+/* ── Brand Manifesto Banner ── */
+.shopverse-manifesto {
+  background: var(--gradient-dark);
+  border-radius: var(--radius-md);
+  padding: 72px 48px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.shopverse-manifesto__inner {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.shopverse-manifesto__eyebrow {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-sage);
+}
+
+.shopverse-manifesto__heading {
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 3.2vw, 36px);
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--color-lace);
+  margin: 0;
+}
+
+.shopverse-manifesto__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  background: var(--color-sapphire);
+  color: var(--color-peacock);
+  border: none;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+  margin-top: 8px;
+}
+
+.shopverse-manifesto__cta:hover {
+  background: var(--color-arctic);
+  transform: translateY(-2px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .shopverse-home__curated-grid,
+  .shopverse-home__arrivals-grid,
+  .shopverse-home__category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shopverse-home__content {
+    padding: 48px 16px 80px;
+    gap: 80px;
+  }
+
+  .shopverse-home__curated-grid,
+  .shopverse-home__arrivals-grid,
+  .shopverse-home__category-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .shopverse-manifesto {
+    padding: 48px 24px;
+  }
+}

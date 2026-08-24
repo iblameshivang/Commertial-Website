@@ -1,0 +1,230 @@
+/* ============================================
+   ShopVerse Hero Carousel — Minimal Luxury
+   ============================================ */
+
+.shopverse-hero {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: calc(100vh - 72px);
+  min-height: 600px;
+  max-height: 960px;
+  overflow: hidden;
+  background-color: var(--color-peacock);
+}
+
+.shopverse-hero__viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.shopverse-hero__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1200ms cubic-bezier(0.22, 1, 0.36, 1), visibility 1200ms cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+
+.shopverse-hero__slide--active {
+  opacity: 1;
+  visibility: visible;
+  z-index: 2;
+}
+
+/* ── Parallax Background with Ken Burns Zoom ── */
+.shopverse-hero__bg {
+  position: absolute;
+  top: -10%;
+  left: 0;
+  right: 0;
+  bottom: -10%;
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+  animation: kenBurnsSlow 20s ease-in-out infinite alternate;
+}
+
+.shopverse-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-hero);
+  z-index: 1;
+}
+
+/* ── Text Content Block ── */
+.shopverse-hero__content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100%;
+  max-width: 680px;
+  padding-left: 8vw;
+  padding-right: 24px;
+}
+
+/* ── Staggered Entrance Animations ── */
+.shopverse-hero__slide--active .shopverse-hero__eyebrow {
+  animation: fadeUp 800ms cubic-bezier(0.22, 1, 0.36, 1) 0ms both;
+}
+
+.shopverse-hero__slide--active .shopverse-hero__headline {
+  animation: fadeUp 800ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+
+.shopverse-hero__slide--active .shopverse-hero__subheadline {
+  animation: fadeUp 800ms cubic-bezier(0.22, 1, 0.36, 1) 300ms both;
+}
+
+.shopverse-hero__slide--active .shopverse-hero__cta {
+  animation: fadeUp 800ms cubic-bezier(0.22, 1, 0.36, 1) 450ms both;
+}
+
+.shopverse-hero__eyebrow {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-sage);
+  margin-bottom: 20px;
+}
+
+.shopverse-hero__headline {
+  font-family: var(--font-serif);
+  font-size: clamp(38px, 4.8vw, 64px);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-lace);
+  margin: 0 0 20px;
+}
+
+.shopverse-hero__subheadline {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-arctic);
+  margin: 0 0 36px;
+  max-width: 520px;
+}
+
+/* ── CTA Button ── */
+.shopverse-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 36px;
+  background-color: var(--color-sapphire);
+  color: var(--color-peacock);
+  border: none;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 24px rgba(5, 50, 41, 0.2);
+}
+
+.shopverse-hero__cta:hover {
+  background-color: var(--color-spruce);
+  color: var(--color-lace);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(5, 50, 41, 0.3);
+}
+
+/* ── Circle Arrows ── */
+.shopverse-hero__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 237, 209, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(188, 221, 220, 0.5);
+  color: var(--color-peacock);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 300ms ease, transform 200ms ease, background 200ms ease;
+}
+
+.shopverse-hero:hover .shopverse-hero__arrow {
+  opacity: 1;
+}
+
+.shopverse-hero__arrow:hover {
+  background: var(--color-lace);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.shopverse-hero__arrow--left {
+  left: 24px;
+}
+
+.shopverse-hero__arrow--right {
+  right: 24px;
+}
+
+/* ── Dot Indicators ── */
+.shopverse-hero__dots {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shopverse-hero__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shopverse-hero__dot--active {
+  width: 24px;
+  background: var(--color-sapphire);
+}
+
+/* ── Mobile Viewport ── */
+@media (max-width: 768px) {
+  .shopverse-hero {
+    height: 70vh;
+    min-height: 480px;
+  }
+
+  .shopverse-hero__content {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .shopverse-hero__subheadline {
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+
+  .shopverse-hero__arrow {
+    display: none;
+  }
+}

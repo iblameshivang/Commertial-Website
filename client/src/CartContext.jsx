@@ -25,6 +25,8 @@ export function CartProvider({ children }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [notice, setNotice] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   const itemsRef = useRef(items);
   const toastTimer = useRef(null);
@@ -128,7 +130,8 @@ export function CartProvider({ children }) {
       if (!response.ok) {
         return;
       }
-      products = await response.json();
+      const json = await response.json();
+      products = json.data || json;
     } catch (err) {
       return;
     }
@@ -202,16 +205,47 @@ export function CartProvider({ children }) {
     [items]
   );
 
+  const applyPromoCode = useCallback(async (code) => {
+    if (!code || !code.trim()) {
+      throw new Error('Please enter a valid promo code');
+    }
+    const currentSubtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+    const res = await fetch(`${API_BASE}/api/cart/apply-promo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code.trim(), cart_total: currentSubtotal })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Invalid or expired promo code');
+    }
+    setAppliedPromo(json.data);
+    setDiscountAmount(json.data.discount_amount || 0);
+    showToast(`Promo ${json.data.code} applied! Saved ₹${json.data.discount_amount}`);
+    return json.data;
+  }, [items, showToast]);
+
+  const removePromoCode = useCallback(() => {
+    setAppliedPromo(null);
+    setDiscountAmount(0);
+    showToast('Promo code removed');
+  }, [showToast]);
+
   const deliveryFee = items.length > 0 && subtotal < FREE_DELIVERY_THRESHOLD ? DELIVERY_FEE : 0;
   const freeDeliveryRemaining = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
+  const finalTotal = Math.max(0, subtotal - discountAmount) + deliveryFee;
 
   const value = useMemo(() => ({
     items,
     cartCount,
     subtotal,
     deliveryFee,
-    total: subtotal + deliveryFee,
+    discountAmount,
+    appliedPromo,
+    total: finalTotal,
     freeDeliveryRemaining,
+    applyPromoCode,
+    removePromoCode,
     addToCart,
     updateQuantity,
     removeItem,
@@ -231,7 +265,12 @@ export function CartProvider({ children }) {
     cartCount,
     subtotal,
     deliveryFee,
+    discountAmount,
+    appliedPromo,
+    finalTotal,
     freeDeliveryRemaining,
+    applyPromoCode,
+    removePromoCode,
     addToCart,
     updateQuantity,
     removeItem,

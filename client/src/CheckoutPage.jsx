@@ -78,6 +78,7 @@ export default function CheckoutPage() {
     cartCount,
     subtotal,
     deliveryFee,
+    appliedPromo,
     total,
     freeDeliveryRemaining,
     clearCart,
@@ -132,6 +133,7 @@ export default function CheckoutPage() {
           phone: address.phone.replace(/[\s-]/g, ''),
           payment_method: 'COD',
           items: orderItems,
+          promo_code: appliedPromo?.code || undefined,
         }),
       });
 
@@ -146,7 +148,9 @@ export default function CheckoutPage() {
       }
 
       try {
-        localStorage.setItem(ADDRESS_KEY, JSON.stringify(address));
+        // Only persist non-sensitive address fields — NOT phone or email (PII risk in localStorage)
+        const { phone, email, ...safeFields } = address;
+        localStorage.setItem(ADDRESS_KEY, JSON.stringify(safeFields));
       } catch (err) {
         // Saving the address for next time is a convenience — never block the order on it.
       }

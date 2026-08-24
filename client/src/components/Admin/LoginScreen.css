@@ -1,0 +1,209 @@
+/* ============================================
+   ShopVerse Admin Login & Liquid Transition
+   ============================================ */
+
+.shopverse-auth-page {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: var(--color-lace);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Liquid Organic Blob Transition ── */
+.shopverse-liquid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shopverse-liquid-svg {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  inset: 0;
+}
+
+.shopverse-blob {
+  transition: transform 1200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.shopverse-blob--1 {
+  fill: var(--color-sapphire);
+  animation: liquidWave 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.shopverse-blob--2 {
+  fill: var(--color-peacock);
+  animation: liquidWave 1.2s cubic-bezier(0.4, 0, 0.2, 1) 150ms forwards;
+}
+
+@keyframes liquidWave {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(0%);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+/* ── Card ── */
+.shopverse-auth-card {
+  background: #ffffff;
+  border: 1px solid var(--color-arctic);
+  border-radius: var(--radius-md);
+  padding: 44px 36px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  z-index: 10;
+}
+
+.shopverse-auth-card__header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.shopverse-auth-card__brand {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: var(--color-sage);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.shopverse-auth-card__title {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--color-peacock);
+  margin: 0 0 8px;
+}
+
+.shopverse-auth-card__subtitle {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-spruce);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.shopverse-auth-card__error {
+  padding: 12px 16px;
+  background: rgba(254, 145, 121, 0.15);
+  border: 1px solid var(--color-ballet-slipper);
+  border-radius: var(--radius-xs);
+  color: var(--color-peacock);
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.shopverse-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.shopverse-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shopverse-auth-field span {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-spruce);
+}
+
+.shopverse-auth-field input {
+  height: 46px;
+  padding: 0 14px;
+  background: var(--color-lace);
+  border: 1px solid var(--color-arctic);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-peacock);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.shopverse-auth-field input:focus {
+  border-color: var(--color-sapphire);
+}
+
+.shopverse-auth-hint {
+  padding: 10px 14px;
+  background: rgba(188, 221, 220, 0.3);
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  color: var(--color-spruce);
+}
+
+.shopverse-auth-hint code {
+  color: var(--color-peacock);
+  font-weight: 600;
+}
+
+.shopverse-auth-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  background: var(--color-sapphire);
+  color: var(--color-peacock);
+  border: none;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+  margin-top: 6px;
+}
+
+.shopverse-auth-submit:hover:not(:disabled) {
+  background: var(--color-spruce);
+  color: var(--color-lace);
+}
+
+.shopverse-auth-card__footer {
+  margin-top: 24px;
+  text-align: center;
+  border-top: 1px solid rgba(188, 221, 220, 0.4);
+  padding-top: 18px;
+}
+
+.shopverse-auth-toggle {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-spruce);
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 150ms ease;
+}
+
+.shopverse-auth-toggle:hover {
+  color: var(--color-peacock);
+}

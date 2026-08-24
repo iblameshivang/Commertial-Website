@@ -1,0 +1,429 @@
+/* ============================================
+   ShopVerse Luxury Navbar Styles
+   ============================================ */
+
+.shopverse-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 72px;
+  background: rgba(255, 237, 209, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(188, 221, 220, 0.5);
+  z-index: 50;
+  transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1), background 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shopverse-navbar--scrolled {
+  background: rgba(255, 237, 209, 0.92);
+  box-shadow: 0 4px 30px rgba(5, 50, 41, 0.08);
+}
+
+.shopverse-navbar__container {
+  max-width: 1440px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* ── Brand Logo ── */
+.shopverse-navbar__brand {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-peacock);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+  transition: opacity 200ms ease;
+}
+
+.shopverse-navbar__brand:hover {
+  opacity: 0.85;
+}
+
+/* ── Center Morphing Search Bar (Phase 3 - Feature 3.1) ── */
+.shopverse-navbar__center {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 44px;
+  transition: width 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* State 1: Collapsed (Icon Only 44px) */
+.shopverse-navbar__center--collapsed {
+  width: 44px;
+}
+
+/* State 2: Hover (Smoothly Expands to 220px) */
+.shopverse-navbar__center--collapsed:hover {
+  width: 220px;
+}
+
+/* State 3 & 4: Focus / Click & Has Text (Expands to 420px) */
+.shopverse-navbar__center--focused,
+.shopverse-navbar__center--has-text {
+  width: 420px;
+  max-width: 100%;
+}
+
+.shopverse-navbar__search-form {
+  width: 100%;
+  height: 44px;
+  background: rgba(255, 237, 209, 0.45);
+  border: 1px solid rgba(188, 221, 220, 0.6);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+  overflow: hidden;
+}
+
+.shopverse-navbar__center--collapsed:hover .shopverse-navbar__search-form {
+  background: rgba(255, 237, 209, 0.85);
+  border-color: var(--color-arctic);
+  box-shadow: 0 2px 12px rgba(5, 50, 41, 0.06);
+}
+
+.shopverse-navbar__center--focused .shopverse-navbar__search-form,
+.shopverse-navbar__center--has-text .shopverse-navbar__search-form {
+  background: var(--color-lace);
+  border-color: var(--color-arctic);
+  box-shadow: 0 0 0 3px rgba(114, 176, 171, 0.25), 0 4px 16px rgba(5, 50, 41, 0.08);
+}
+
+.shopverse-navbar__search-icon-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-spruce);
+  flex-shrink: 0;
+}
+
+.shopverse-navbar__search-icon {
+  color: var(--color-spruce);
+  flex-shrink: 0;
+  transition: transform 200ms ease, color 200ms ease;
+}
+
+.shopverse-navbar__search-form:focus-within .shopverse-navbar__search-icon,
+.shopverse-navbar__center--has-text .shopverse-navbar__search-icon {
+  color: var(--color-peacock);
+  transform: scale(1.05);
+}
+
+.shopverse-navbar__search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-peacock);
+  transition: opacity 200ms ease;
+}
+
+.shopverse-navbar__center--collapsed:not(:hover) .shopverse-navbar__search-input {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shopverse-navbar__center--collapsed:hover .shopverse-navbar__search-input {
+  opacity: 1;
+}
+
+.shopverse-navbar__search-input::placeholder {
+  color: var(--color-spruce);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.shopverse-navbar__search-clear {
+  border: none;
+  background: rgba(5, 50, 41, 0.08);
+  border-radius: var(--radius-full);
+  color: var(--color-spruce);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.shopverse-navbar__search-clear:hover {
+  background: rgba(5, 50, 41, 0.15);
+  color: var(--color-peacock);
+  transform: scale(1.1);
+}
+
+/* ── Search Dropdown ── */
+.shopverse-navbar__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-arctic);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+}
+
+.shopverse-navbar__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease;
+  border-bottom: 1px solid rgba(188, 221, 220, 0.3);
+}
+
+.shopverse-navbar__dropdown-item:hover {
+  background: rgba(188, 221, 220, 0.2);
+}
+
+.shopverse-navbar__dropdown-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-xs);
+  background: var(--color-lace);
+}
+
+.shopverse-navbar__dropdown-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shopverse-navbar__dropdown-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-peacock);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shopverse-navbar__dropdown-price {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-spruce);
+}
+
+.shopverse-navbar__dropdown-arrow {
+  color: var(--color-spruce);
+  opacity: 0.5;
+}
+
+.shopverse-navbar__dropdown-view-all {
+  padding: 14px 16px;
+  border: none;
+  background: var(--color-lace);
+  color: var(--color-peacock);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 150ms ease;
+}
+
+.shopverse-navbar__dropdown-view-all:hover {
+  background: var(--color-arctic);
+}
+
+/* ── Right Navigation Cluster ── */
+.shopverse-navbar__right {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.shopverse-navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.shopverse-navbar__link {
+  position: relative;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-spruce);
+  text-decoration: none;
+  padding: 6px 0;
+  transition: color 200ms ease;
+}
+
+.shopverse-navbar__link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--color-sapphire);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shopverse-navbar__link:hover {
+  color: var(--color-peacock);
+}
+
+.shopverse-navbar__link:hover::after {
+  transform: scaleX(1);
+}
+
+.shopverse-navbar__link--active {
+  color: var(--color-peacock);
+}
+
+.shopverse-navbar__link--active::after {
+  transform: scaleX(1);
+}
+
+/* ── Action Icons ── */
+.shopverse-navbar__icons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.shopverse-navbar__icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--color-spruce);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  transition: color 200ms ease, background 200ms ease;
+  text-decoration: none;
+}
+
+.shopverse-navbar__icon-btn:hover {
+  color: var(--color-peacock);
+  background: rgba(188, 221, 220, 0.4);
+}
+
+.shopverse-navbar__icon-btn--mobile-search {
+  display: none;
+}
+
+/* ── Cart / Watchlist Badge ── */
+.shopverse-navbar__badge {
+  position: absolute;
+  top: 0px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-bubblegum);
+  color: var(--color-peacock);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.shopverse-navbar__badge--bounce {
+  animation: cartBadgeBounce 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Mobile Hamburger ── */
+.shopverse-navbar__hamburger {
+  display: none;
+  border: none;
+  background: transparent;
+  color: var(--color-spruce);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* ── Mobile Search & Drawer ── */
+.shopverse-navbar__mobile-search {
+  padding: 12px 24px;
+  background: var(--color-lace);
+  border-bottom: 1px solid var(--color-arctic);
+}
+
+.shopverse-navbar__mobile-menu {
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  background: var(--color-lace);
+  border-bottom: 1px solid var(--color-arctic);
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-lg);
+}
+
+.shopverse-navbar__mobile-link {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-peacock);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(188, 221, 220, 0.3);
+}
+
+/* ── Spacer ── */
+.shopverse-navbar-spacer {
+  height: 72px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .shopverse-navbar__center {
+    display: none;
+  }
+  .shopverse-navbar__links {
+    display: none;
+  }
+  .shopverse-navbar__icon-btn--mobile-search {
+    display: flex;
+  }
+  .shopverse-navbar__hamburger {
+    display: flex;
+  }
+}

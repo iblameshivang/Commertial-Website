@@ -1,0 +1,116 @@
+/* ============================================
+   ShopVerse Product Scroller Styles
+   ============================================ */
+
+.shopverse-scroller {
+  width: 100%;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1), transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.shopverse-scroller--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.shopverse-scroller__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.shopverse-scroller__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shopverse-scroller__title {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--color-peacock);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.shopverse-scroller__subtitle {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--color-spruce);
+  margin: 0;
+}
+
+.shopverse-scroller__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shopverse-scroller__arrow {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: #ffffff;
+  border: 1px solid var(--color-arctic);
+  color: var(--color-peacock);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.shopverse-scroller__arrow:hover:not(:disabled) {
+  background: var(--color-sapphire);
+  color: #ffffff;
+  border-color: var(--color-sapphire);
+  transform: scale(1.05);
+}
+
+.shopverse-scroller__arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Scroll Track ── */
+.shopverse-scroller__track {
+  display: flex;
+  gap: 28px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 8px 4px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.shopverse-scroller__track::-webkit-scrollbar {
+  height: 4px;
+}
+
+.shopverse-scroller__track::-webkit-scrollbar-track {
+  background: rgba(188, 221, 220, 0.3);
+  border-radius: var(--radius-full);
+}
+
+.shopverse-scroller__track::-webkit-scrollbar-thumb {
+  background: var(--color-sapphire);
+  border-radius: var(--radius-full);
+}
+
+.shopverse-scroller__item {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 768px) {
+  .shopverse-scroller__item {
+    flex: 0 0 220px;
+  }
+  .shopverse-scroller__title {
+    font-size: 26px;
+  }
+}
