@@ -2,13 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProductCard from './ProductCard';
 import ProductImageGallery from './ProductImageGallery';
+import HeartIcon from './HeartIcon';
 import { useCart } from './CartContext';
+import { useWishlist } from './WishlistContext';
 import { API_BASE, resolveImageUrl } from './config';
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, showToast } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   const [product, setProduct] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
@@ -69,6 +72,7 @@ export default function ProductDetailPage() {
 
   const stockCount = Number(product?.stock ?? 0);
   const isAvailable = stockCount > 0;
+  const wishlisted = Boolean(product?.id) && isWishlisted(product.id);
 
   const updateQuantity = nextValue => {
     if (!product) {
@@ -90,6 +94,15 @@ export default function ProductDetailPage() {
     }
 
     addToCart(product, quantity);
+  };
+
+  const handleWishlistToggle = () => {
+    const action = toggleWishlist(product);
+    if (action === 'added') {
+      showToast(`${product.name} saved to wishlist`);
+    } else if (action === 'removed') {
+      showToast(`${product.name} removed from wishlist`);
+    }
   };
 
   if (loading) {
@@ -152,6 +165,16 @@ export default function ProductDetailPage() {
             </button>
             <button type="button" className="secondary-button add-to-cart-button large" onClick={() => navigate('/cart')}>
               Go to Cart
+            </button>
+            {/* Deliberately not disabled when out of stock — saving it for later is the point. */}
+            <button
+              type="button"
+              className={wishlisted ? 'wishlist-button large active' : 'wishlist-button large'}
+              onClick={handleWishlistToggle}
+              aria-pressed={wishlisted}
+            >
+              <HeartIcon filled={wishlisted} size={18} />
+              <span>{wishlisted ? 'In Wishlist' : 'Add to Wishlist'}</span>
             </button>
           </div>
         </div>

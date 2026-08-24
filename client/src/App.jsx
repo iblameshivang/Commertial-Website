@@ -6,7 +6,10 @@ import CartDrawer from './CartDrawer';
 import CartPage from './CartPage';
 import CheckoutPage from './CheckoutPage';
 import OrderConfirmationPage from './OrderConfirmationPage';
+import WishlistPage from './WishlistPage';
+import HeartIcon from './HeartIcon';
 import { useCart } from './CartContext';
+import { useWishlist } from './WishlistContext';
 import { API_BASE, resolveImageUrl } from './config';
 import AdminDashboardView from './AdminDashboard';
 
@@ -695,6 +698,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { cartCount, openDrawer, toast, notice, dismissNotice } = useCart();
+  const { wishlistCount } = useWishlist();
 
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     try {
@@ -714,16 +718,29 @@ export default function App() {
             <Link to="/" className="brand-link">eCommerce Demo</Link>
           </h1>
           {!isAdminRoute && (
-            <button
-              type="button"
-              className="cart-toggle"
-              onClick={openDrawer}
-              aria-label={`Open cart, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`}
-            >
-              <CartIcon />
-              <span>Cart</span>
-              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-            </button>
+            <div className="header-actions">
+              <button
+                type="button"
+                className="wishlist-toggle"
+                onClick={() => navigate('/wishlist')}
+                aria-label={`Open wishlist, ${wishlistCount} ${wishlistCount === 1 ? 'item' : 'items'}`}
+              >
+                <HeartIcon filled={wishlistCount > 0} />
+                <span>Wishlist</span>
+                {wishlistCount > 0 && <span className="cart-badge wishlist-badge">{wishlistCount}</span>}
+              </button>
+
+              <button
+                type="button"
+                className="cart-toggle"
+                onClick={openDrawer}
+                aria-label={`Open cart, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`}
+              >
+                <CartIcon />
+                <span>Cart</span>
+                {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+              </button>
+            </div>
           )}
         </div>
 
@@ -768,6 +785,7 @@ export default function App() {
         />
         <Route path="/product/:productId" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order-confirmation/:orderCode" element={<OrderConfirmationPage />} />
         <Route path="*" element={<ProductListPage />} />
