@@ -1,4 +1,3 @@
-```markdown
 # 🛒 Shopverse — Our E-Commerce Web App
 
 Hey there! Welcome to **Shopverse**. 
@@ -46,39 +45,18 @@ We built this ourselves, but we used modern AI tools to help us brainstorm, writ
 
 ## 🚀 How to Run It
 
-### 1. Start the Backend
-Open a terminal:
+Run these in separate terminal tabs:
+
 ```bash
+# Terminal 1: Backend Server (Port 5001)
 cd server
 npm install
 npm start
 
-```
-
-### 2. Start the Frontend
-
-Open a second terminal:
-
-```bash
+# Terminal 2: Frontend Client (Port 5173)
 cd client
 npm install
 npm run dev
 
-```
-
-### 3. Share It Live (Optional)
-
-To view and test the live store directly on your phone:
-
-```bash
+# Terminal 3: Live Cloudflare Tunnel (Optional - to test on phone)
 cloudflared tunnel --url http://localhost:5173
-
-```
-
----
-
-Thanks for checking out our project! ⭐
-
-```
-
-```
