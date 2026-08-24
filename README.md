@@ -9,10 +9,10 @@ We are a group of four 18-year-old college friends who wanted to build a clean, 
 ## 👥 The Team
 
 Built by:
-* **Shivang Manhas**
-* **Ankit**
-* **Gaurav Maurya**
-* **Digvijay Singh Rathore**
+* **Shivang Manhas(BackEnd,DataBase,Connection)**
+* **Ankit Rana(Prompter,Emotional Supporter, Actual Exicutioner, Idea Generator**
+* **Gaurav Morya(Creative af, Frontend Dev, he can do cake on the cherry instead of vice versa)**
+* **Digvijay Singh Rathore(claude pro tocken provider, say the work and it's done)**
 
 ---
 
@@ -49,7 +49,7 @@ Run these in separate terminal tabs:
 
 ```bash
 # Terminal 1: Backend Server (Port 5001)
-cd server
+cd server  --first run this then next and same for all
 npm install
 npm start
 
