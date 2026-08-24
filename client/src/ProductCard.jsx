@@ -1,13 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import HeartIcon from './HeartIcon';
 import { useCart } from './CartContext';
+import { useWishlist } from './WishlistContext';
 import { resolveImageUrl } from './config';
 
-export default function ProductCard({ product, showAddToCart = true }) {
+export default function ProductCard({ product, showAddToCart = true, showWishlist = true }) {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, showToast } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const imageSource = resolveImageUrl(product?.image_url || product?.images?.[0]);
   const isAvailable = Number(product?.stock ?? 0) > 0;
+  const wishlisted = Boolean(product?.id) && isWishlisted(product.id);
 
   const handleCardClick = () => {
     if (product?.id) {
@@ -19,6 +23,17 @@ export default function ProductCard({ product, showAddToCart = true }) {
     // Without this the card's own click handler would navigate to the detail page.
     event.stopPropagation();
     addToCart(product, 1);
+  };
+
+  const handleWishlistToggle = event => {
+    event.stopPropagation();
+
+    const action = toggleWishlist(product);
+    if (action === 'added') {
+      showToast(`${product.name} saved to wishlist`);
+    } else if (action === 'removed') {
+      showToast(`${product.name} removed from wishlist`);
+    }
   };
 
   return (
@@ -35,6 +50,22 @@ export default function ProductCard({ product, showAddToCart = true }) {
       tabIndex={0}
     >
       <div className="image-shell">
+        {showWishlist && (
+          // Stays enabled when the product is out of stock — remembering an item until it
+          // restocks is exactly what the wishlist is for.
+          <button
+            type="button"
+            className={wishlisted ? 'wishlist-heart active' : 'wishlist-heart'}
+            onClick={handleWishlistToggle}
+            aria-pressed={wishlisted}
+            aria-label={wishlisted
+              ? `Remove ${product?.name || 'product'} from wishlist`
+              : `Save ${product?.name || 'product'} to wishlist`}
+          >
+            <HeartIcon filled={wishlisted} size={18} />
+          </button>
+        )}
+
         <img
           className="product-image"
           src={imageSource}

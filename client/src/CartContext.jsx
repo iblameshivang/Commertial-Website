@@ -221,6 +221,9 @@ export function CartProvider({ children }) {
     openDrawer,
     closeDrawer,
     toast,
+    // Exposed so the wishlist can reuse this toast rather than run a second,
+    // visually overlapping one of its own.
+    showToast,
     notice,
     dismissNotice,
   }), [
@@ -238,6 +241,7 @@ export function CartProvider({ children }) {
     openDrawer,
     closeDrawer,
     toast,
+    showToast,
     notice,
     dismissNotice,
   ]);
