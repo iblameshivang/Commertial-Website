@@ -4,5 +4,8 @@ server/node_modules/
 client/dist/
 server/data/demo.db
 .env
+.env.local
+.env.production
+.env.*.local
 .DS_Store
 .claude/

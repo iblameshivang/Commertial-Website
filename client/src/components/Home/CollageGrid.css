@@ -1,0 +1,179 @@
+/* ── 5-Card Liquid Reveal Collage Grid (Feature 5.2) ── */
+.shopverse-collage-section {
+  width: 100%;
+}
+
+.shopverse-collage-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+  min-height: 640px;
+}
+
+.shopverse-collage-companions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 24px;
+}
+
+/* ── Collage Card ── */
+.shopverse-collage-card {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-lace);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform 400ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.shopverse-collage-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.shopverse-collage-card--large {
+  min-height: 580px;
+}
+
+.shopverse-collage-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.shopverse-collage-card:hover .shopverse-collage-card__img {
+  transform: scale(1.06);
+}
+
+.shopverse-collage-card__tag {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 6px 12px;
+  background: rgba(5, 50, 41, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--color-lace);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  z-index: 5;
+}
+
+/* ── Liquid-Glass Backdrop Blur Panel Rising on Hover ── */
+.shopverse-collage-card__glass-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 20px;
+  background: rgba(5, 50, 41, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 237, 209, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease;
+  z-index: 10;
+}
+
+.shopverse-collage-card:hover .shopverse-collage-card__glass-panel {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.shopverse-collage-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shopverse-collage-card__brand {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-sage);
+}
+
+.shopverse-collage-card__title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--color-lace);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shopverse-collage-card__price {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-arctic);
+}
+
+.shopverse-collage-card__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.shopverse-collage-card__icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 237, 209, 0.2);
+  border: 1px solid rgba(255, 237, 209, 0.3);
+  color: var(--color-lace);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.shopverse-collage-card__icon-btn:hover {
+  background: var(--color-sapphire);
+  color: var(--color-peacock);
+  transform: scale(1.1);
+}
+
+.shopverse-collage-card__icon-btn.shopverse-collage-card__icon-btn--added,
+.shopverse-collage-card__icon-btn.shopverse-collage-card__icon-btn--added:hover {
+  background: var(--color-sage);
+  color: var(--color-peacock);
+}
+
+@media (max-width: 960px) {
+  .shopverse-collage-grid {
+    grid-template-columns: 1fr;
+  }
+  .shopverse-collage-card--large {
+    min-height: 400px;
+  }
+  .shopverse-collage-card__glass-panel {
+    transform: translateY(0);
+    opacity: 1;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .shopverse-collage-companions {
+    grid-template-columns: 1fr;
+  }
+}

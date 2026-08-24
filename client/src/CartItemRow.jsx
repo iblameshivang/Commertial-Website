@@ -1,6 +1,7 @@
 import React from 'react';
 import { resolveImageUrl } from './config';
 import { formatCurrency } from './format';
+import { getColorDisplayName } from './utils/colors';
 
 export default function CartItemRow({ item, onUpdateQuantity, onRemove, compact = false }) {
   const stockLimit = Math.max(Number(item.stock || 1), 1);
@@ -19,6 +20,13 @@ export default function CartItemRow({ item, onUpdateQuantity, onRemove, compact 
 
       <div className="cart-row-info">
         <h3>{item.name}</h3>
+        {(item.selectedColor || item.selectedSize) && (
+          <p className="cart-row-meta" style={{ fontSize: '12px', color: 'var(--color-spruce)', margin: '2px 0 6px' }}>
+            {item.selectedColor && <span>Color: {getColorDisplayName(item.selectedColor)}</span>}
+            {item.selectedColor && item.selectedSize && <span> &bull; </span>}
+            {item.selectedSize && <span>Size: {item.selectedSize}</span>}
+          </p>
+        )}
         <p className="cart-row-price">{formatCurrency(item.price)}</p>
 
         <div className="quantity-stepper">
