@@ -100,6 +100,8 @@ button {
 .secondary-button,
 .danger-button,
 .cart-toggle,
+.wishlist-toggle,
+.wishlist-button,
 .back-link,
 .quantity-picker button,
 .thumbnail,
@@ -215,6 +217,8 @@ button {
 .image-shell,
 .main-image-shell {
   background: #f8fafc;
+  /* Anchors the .wishlist-heart overlay. */
+  position: relative;
 }
 
 .product-image,
@@ -621,6 +625,122 @@ button {
   font-weight: 700;
   line-height: 20px;
   text-align: center;
+}
+
+/* ---------- Wishlist ---------- */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wishlist-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  min-width: 140px;
+  background: #fff;
+  color: #0f172a;
+}
+
+.wishlist-toggle:hover {
+  border-color: #e11d48;
+  color: #e11d48;
+}
+
+.wishlist-badge {
+  background: #e11d48;
+}
+
+/* Overlays the product image — .image-shell is position: relative for this. */
+.wishlist-heart {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #64748b;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+.wishlist-heart:hover {
+  color: #e11d48;
+  border-color: #fda4af;
+  transform: scale(1.08);
+}
+
+.wishlist-heart.active {
+  color: #e11d48;
+  border-color: #fda4af;
+}
+
+/* Detail page button — matches the flex sizing .purchase-actions gives its buttons. */
+.wishlist-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fff;
+  color: #0f172a;
+}
+
+.wishlist-button.large {
+  flex: 1 1 180px;
+  padding: 14px 18px;
+  font-size: 1rem;
+}
+
+.wishlist-button:hover {
+  border-color: #e11d48;
+  color: #e11d48;
+}
+
+.wishlist-button.active {
+  border-color: #e11d48;
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.wishlist-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wishlist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wishlist-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.wishlist-clear-confirm {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* .product-grid brings its own top margin, which doubles up with the page gap. */
+.wishlist-page .product-grid {
+  margin-top: 0;
 }
 
 .cart-notice {
@@ -1601,6 +1721,11 @@ footer {
     flex-direction: column;
   }
 
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
   .cart-layout,
   .checkout-layout,
   .confirmation-layout {
@@ -1691,6 +1816,20 @@ footer {
 
   .purchase-actions {
     flex-direction: column;
+  }
+
+  /* Two header buttons share the row instead of forcing a horizontal scroll. */
+  .header-actions .cart-toggle,
+  .header-actions .wishlist-toggle {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wishlist-heart {
+    width: 28px;
+    height: 28px;
+    top: 8px;
+    right: 8px;
   }
 }
 

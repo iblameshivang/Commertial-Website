@@ -30,7 +30,9 @@ export default function WishlistPage() {
     try {
       await api.post('/api/wishlist', { product_id: productId });
       setItems(prev => prev.filter(item => item.product_id !== productId));
-    } catch {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleMoveToCart = (item) => {

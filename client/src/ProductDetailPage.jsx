@@ -242,7 +242,7 @@ export default function ProductDetailPage() {
         <span className="shopverse-breadcrumb__current">{product.name}</span>
       </nav>
 
-      {/* Luxury 3-Column PDP Grid (Feature 2.2: 80px | 1fr | 400px) */}
+      {/* Luxury 3-Column PDP Grid */}
       <div className="shopverse-pdp__3col-layout">
         {/* Column 1: Vertical Thumbnail Strip (80px) */}
         <div className="shopverse-pdp__thumb-strip">
@@ -259,7 +259,7 @@ export default function ProductDetailPage() {
           ))}
         </div>
 
-        {/* Column 2: High-Resolution Center Showcase & Lightbox Trigger */}
+        {/* Column 2: Center Showcase */}
         <div className="shopverse-pdp__center-showcase">
           <div
             className="shopverse-pdp__main-img-wrap"
@@ -281,7 +281,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Column 3: Product Details, Swatches, Sizing, CTA & Accordions */}
+        {/* Column 3: Product Details & Purchase Actions */}
         <div className="shopverse-pdp__info">
           {product.brand && <span className="shopverse-pdp__brand">{product.brand}</span>}
           <h1 className="shopverse-pdp__title">{product.name}</h1>
@@ -320,7 +320,7 @@ export default function ProductDetailPage() {
 
           <p className="shopverse-pdp__desc">{product.description}</p>
 
-          {/* Color Variants Swatches (Feature 2.2 & Feature 1.3) */}
+          {/* Color Variants Swatches */}
           {((product.variants && product.variants.length > 0) || (product.colors && product.colors.length > 0)) && (
             <div className="shopverse-pdp__option-group">
               <span className="shopverse-pdp__option-label">
@@ -435,7 +435,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Collapsible Luxury Accordions (Feature 2.2) */}
+          {/* Accordions */}
           <div className="shopverse-pdp__accordions">
             <div className="shopverse-pdp__accordion">
               <button
@@ -497,7 +497,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Lightbox Modal (Feature 2.2) */}
+      {/* Lightbox Modal */}
       {lightboxOpen && (
         <div className="shopverse-lightbox" onClick={() => setLightboxOpen(false)}>
           <button
@@ -537,7 +537,7 @@ export default function ProductDetailPage() {
         </div>
       )}
 
-      {/* Mobile Sticky Add-to-Cart Bar (Feature 2.2) */}
+      {/* Mobile Sticky Add-to-Cart Bar */}
       <div className={`shopverse-pdp__mobile-sticky-bar ${showStickyBar ? 'shopverse-pdp__mobile-sticky-bar--visible' : ''}`}>
         <div className="shopverse-pdp__mobile-sticky-inner">
           <img src={images[selectedImageIndex] || product.image_url} alt="" className="shopverse-pdp__mobile-sticky-thumb" />
@@ -556,7 +556,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Editorial Information Tabs */}
+      {/* Information Tabs */}
       <section className="shopverse-pdp__tabs-section">
         <div className="shopverse-pdp__tab-headers">
           <button
@@ -624,7 +624,6 @@ export default function ProductDetailPage() {
 
           {activeTab === 'reviews' && (
             <div className="shopverse-pdp__tab-pane">
-              {/* Review Submission Form */}
               <form onSubmit={handleReviewSubmit} className="shopverse-pdp__review-form">
                 <h4>Share Your Experience</h4>
                 <div className="shopverse-pdp__review-rating-select">
@@ -672,7 +671,6 @@ export default function ProductDetailPage() {
                 </button>
               </form>
 
-              {/* Reviews List */}
               <div className="shopverse-pdp__reviews-list">
                 {reviews.length === 0 ? (
                   <p className="shopverse-pdp__no-reviews">No reviews submitted yet. Be the first to share your perspective.</p>
