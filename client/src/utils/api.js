@@ -2,9 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 const SESSION_KEY = 'ecommerce-session-id';
 
-export const API_BASE = (
-  import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:5001`
-).replace(/\/$/, '');
+// Empty string allows Vite's proxy on port 5173 to forward /api and /images to port 5001
+export const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 export const FALLBACK_IMAGE = '/images/no-image.svg';
 
